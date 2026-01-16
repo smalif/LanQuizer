@@ -9,20 +9,25 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data;
 using System.Data.SqlClient;
+using System.Configuration;
 using Microsoft.Data.SqlClient;
 
 namespace LanQuizer
 {
     public partial class Teacher_Reg_Form : Form
     {
-        SqlConnection connect = new SqlConnection(
-@"Data Source=(LocalDB)\MSSQLLocalDB;
-AttachDbFilename=|DataDirectory|\teacher.mdf;
-Integrated Security=True;Connect Timeout=30");
+        private string connStr;
+        private SqlConnection connect;
 
         public Teacher_Reg_Form()
         {
             InitializeComponent();
+
+            connStr = ConfigurationManager
+                      .ConnectionStrings["LanQuizerDB"]
+                      .ConnectionString;
+
+            connect = new SqlConnection(connStr);
         }
 
         private void teacherBtn_Click(object sender, EventArgs e)
@@ -67,30 +72,33 @@ Integrated Security=True;Connect Timeout=30");
                 {
                     connect.Open();
 
-                    string selectData = "SELECT * FROM users " +
-                                        "WHERE email = @email " +
-                                        "AND teacher_id = @teacherID " +
-                                        "AND password = @password";
+                    string selectData = "SELECT * FROM Teachers " +
+                     "WHERE teacherEmail = @email " +
+                     "AND TeacherID = @teacherID " +
+                     "AND TeacherpassBox = @password";
 
                     using (SqlCommand cmd = new SqlCommand(selectData, connect))
                     {
+                        // Add parameters
                         cmd.Parameters.AddWithValue("@email", teacherEmail.Text.Trim());
                         cmd.Parameters.AddWithValue("@teacherID", TeacherID.Text.Trim());
                         cmd.Parameters.AddWithValue("@password", TeacherpassBox.Text.Trim());
 
+                        // Execute query and fill DataTable
                         SqlDataAdapter adapter = new SqlDataAdapter(cmd);
                         DataTable table = new DataTable();
                         adapter.Fill(table);
 
+                        // Check if login is successful
                         if (table.Rows.Count > 0)
                         {
-                            // ✅ READ TEACHER NAME FROM DATABASE
-                            string teacherName = table.Rows[0]["teacher_name"].ToString();
+                            // ✅ Read teacher name from database
+                            string teacherName = table.Rows[0]["teacherName"].ToString();
 
                             MessageBox.Show("Login Successful!", "Information Message",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                            // ✅ PASS NAME TO HOME FORM
+                            // ✅ Pass name to TeacherHome form
                             TeacherHome home = new TeacherHome(teacherName);
                             home.Show();
                             this.Hide();
