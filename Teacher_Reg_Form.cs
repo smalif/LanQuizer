@@ -15,7 +15,11 @@ namespace LanQuizer
 {
     public partial class Teacher_Reg_Form : Form
     {
-        SqlConnection connect = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\alif0\OneDrive\Dokumen\teacher.mdf;Integrated Security=True;Connect Timeout=30");
+        SqlConnection connect = new SqlConnection(
+@"Data Source=(LocalDB)\MSSQLLocalDB;
+AttachDbFilename=|DataDirectory|\teacher.mdf;
+Integrated Security=True;Connect Timeout=30");
+
         public Teacher_Reg_Form()
         {
             InitializeComponent();
