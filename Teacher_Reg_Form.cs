@@ -115,6 +115,13 @@ namespace LanQuizer
                         {
                             // ✅ Read teacher name from database
                             string teacherName = table.Rows[0]["teacherName"].ToString();
+                            string teacherEmailValue = table.Rows[0]["teacherEmail"].ToString();
+                            string teacherIDValue = table.Rows[0]["TeacherID"].ToString();
+
+                            // ✅ Store in global static class
+                            LoggedInUser.Name = teacherName;
+                            LoggedInUser.Email = teacherEmailValue;
+                            LoggedInUser.ID = teacherIDValue;
 
                             MessageBox.Show("Login Successful!", "Information Message",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information);

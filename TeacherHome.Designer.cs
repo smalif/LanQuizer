@@ -30,6 +30,7 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TeacherHome));
             Logo = new Panel();
+            settingsBtn = new PictureBox();
             minbtn = new Label();
             exitBtn = new Label();
             logoutBtn = new PictureBox();
@@ -93,6 +94,7 @@
             myQuizBtn = new Button();
             addSection = new Button();
             Logo.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)settingsBtn).BeginInit();
             ((System.ComponentModel.ISupportInitialize)logoutBtn).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
@@ -125,6 +127,7 @@
             Logo.BackColor = Color.DarkBlue;
             Logo.BackgroundImageLayout = ImageLayout.Zoom;
             Logo.BorderStyle = BorderStyle.FixedSingle;
+            Logo.Controls.Add(settingsBtn);
             Logo.Controls.Add(minbtn);
             Logo.Controls.Add(exitBtn);
             Logo.Controls.Add(logoutBtn);
@@ -142,6 +145,17 @@
             Logo.Padding = new Padding(50);
             Logo.Size = new Size(1262, 144);
             Logo.TabIndex = 1;
+            // 
+            // settingsBtn
+            // 
+            settingsBtn.Image = (Image)resources.GetObject("settingsBtn.Image");
+            settingsBtn.Location = new Point(1128, 74);
+            settingsBtn.Name = "settingsBtn";
+            settingsBtn.Size = new Size(44, 44);
+            settingsBtn.SizeMode = PictureBoxSizeMode.Zoom;
+            settingsBtn.TabIndex = 23;
+            settingsBtn.TabStop = false;
+            settingsBtn.Click += settingsBtn_Click;
             // 
             // minbtn
             // 
@@ -170,7 +184,7 @@
             // logoutBtn
             // 
             logoutBtn.Image = (Image)resources.GetObject("logoutBtn.Image");
-            logoutBtn.Location = new Point(1097, 53);
+            logoutBtn.Location = new Point(1184, 74);
             logoutBtn.Name = "logoutBtn";
             logoutBtn.Size = new Size(44, 44);
             logoutBtn.SizeMode = PictureBoxSizeMode.Zoom;
@@ -182,7 +196,7 @@
             // 
             createQuizBtn.Font = new Font("Times New Roman", 13.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
             createQuizBtn.ForeColor = SystemColors.ActiveCaptionText;
-            createQuizBtn.Location = new Point(866, 53);
+            createQuizBtn.Location = new Point(933, 74);
             createQuizBtn.Name = "createQuizBtn";
             createQuizBtn.Size = new Size(185, 44);
             createQuizBtn.TabIndex = 5;
@@ -843,6 +857,7 @@
             Load += TeacherHome_Load;
             Logo.ResumeLayout(false);
             Logo.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)settingsBtn).EndInit();
             ((System.ComponentModel.ISupportInitialize)logoutBtn).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).EndInit();
@@ -956,5 +971,6 @@
         private Label label30;
         private Label label31;
         private Button button3;
+        private PictureBox settingsBtn;
     }
 }

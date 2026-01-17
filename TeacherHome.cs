@@ -10,6 +10,9 @@ namespace LanQuizer
 {
     public partial class TeacherHome : Form
     {
+
+        private string teacherEmail;
+        private string teacherID;
         public TeacherHome()
         {
             InitializeComponent();
@@ -21,10 +24,19 @@ namespace LanQuizer
             WelcomeTeacher.Text = "Welcome Back, " + teacherName;
         }
 
+        public TeacherHome(string email, string id)
+        {
+            InitializeComponent();
+
+            // Store logged-in user info
+            teacherEmail = email;
+            teacherID = id;
+        }
+
         private void TeacherHome_Load(object sender, EventArgs e)
         {
             addSection.Visible = false;
-        
+
             // Create dynamic panel for sections if not already added
             if (this.Controls["panelSections"] == null)
             {
@@ -38,7 +50,7 @@ namespace LanQuizer
                     AutoScroll = true,
                     Visible = false
                 };
-                this.Controls.Add(panelSections); 
+                this.Controls.Add(panelSections);
             }
         }
 
@@ -191,8 +203,8 @@ namespace LanQuizer
                         };
                         deleteBtn.Click += (s, e) =>
                         {
-                                DeleteSection(sectionName, courseName);
-                                LoadSections();
+                            DeleteSection(sectionName, courseName);
+                            LoadSections();
                         };
                         gb.Controls.Add(deleteBtn);
 
@@ -216,7 +228,7 @@ namespace LanQuizer
                         {
                             Text = "NO SECTIONS ADDED YET",
                             Top = yStart + 30,
-                            Left = xStart +400,
+                            Left = xStart + 400,
                             AutoSize = true,
                             ForeColor = Color.Red,
                             Font = new Font("Times New Roman", 18, FontStyle.Bold)
@@ -349,5 +361,15 @@ namespace LanQuizer
             LoadSections(); // refresh after adding
         }
 
+        private void settingsBtn_Click(object sender, EventArgs e)
+        {
+            // Step 1: Get logged-in teacher info
+            string loggedInEmail = this.teacherEmail; // or wherever you store email of logged-in user
+            string loggedInID = this.teacherID;       // or wherever you store teacher ID
+
+            // Open Settings form and pass the info
+            Settings settingsForm = new Settings(loggedInEmail, loggedInID);
+            settingsForm.ShowDialog(); // or Show()
+        }
     }
 }
