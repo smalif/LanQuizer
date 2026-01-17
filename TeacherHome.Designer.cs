@@ -30,6 +30,8 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TeacherHome));
             Logo = new Panel();
+            connectImg = new PictureBox();
+            connected = new Label();
             settingsBtn = new PictureBox();
             minbtn = new Label();
             exitBtn = new Label();
@@ -94,6 +96,7 @@
             myQuizBtn = new Button();
             addSection = new Button();
             Logo.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)connectImg).BeginInit();
             ((System.ComponentModel.ISupportInitialize)settingsBtn).BeginInit();
             ((System.ComponentModel.ISupportInitialize)logoutBtn).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
@@ -127,6 +130,8 @@
             Logo.BackColor = Color.DarkBlue;
             Logo.BackgroundImageLayout = ImageLayout.Zoom;
             Logo.BorderStyle = BorderStyle.FixedSingle;
+            Logo.Controls.Add(connectImg);
+            Logo.Controls.Add(connected);
             Logo.Controls.Add(settingsBtn);
             Logo.Controls.Add(minbtn);
             Logo.Controls.Add(exitBtn);
@@ -145,6 +150,28 @@
             Logo.Padding = new Padding(50);
             Logo.Size = new Size(1262, 144);
             Logo.TabIndex = 1;
+            // 
+            // connectImg
+            // 
+            connectImg.Image = (Image)resources.GetObject("connectImg.Image");
+            connectImg.Location = new Point(933, 27);
+            connectImg.Name = "connectImg";
+            connectImg.Size = new Size(25, 22);
+            connectImg.SizeMode = PictureBoxSizeMode.Zoom;
+            connectImg.TabIndex = 25;
+            connectImg.TabStop = false;
+            // 
+            // connected
+            // 
+            connected.AutoSize = true;
+            connected.Font = new Font("Times New Roman", 10.2F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            connected.ForeColor = Color.Lime;
+            connected.Location = new Point(962, 28);
+            connected.Name = "connected";
+            connected.Size = new Size(87, 19);
+            connected.TabIndex = 24;
+            connected.Text = "Connected";
+            connected.Click += connected_Click;
             // 
             // settingsBtn
             // 
@@ -857,6 +884,7 @@
             Load += TeacherHome_Load;
             Logo.ResumeLayout(false);
             Logo.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)connectImg).EndInit();
             ((System.ComponentModel.ISupportInitialize)settingsBtn).EndInit();
             ((System.ComponentModel.ISupportInitialize)logoutBtn).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
@@ -956,11 +984,10 @@
         private Label minbtn;
         private Button addSection;
         private GroupBox sectionGroup;
-        private PictureBox pictureBox16;
+        private PictureBox connectImg;
         private PictureBox pictureBox18;
         private PictureBox pictureBox23;
         private PictureBox pictureBox24;
-        private Label label25;
         private PictureBox pictureBox25;
         private Label label26;
         private PictureBox pictureBox26;
@@ -972,5 +999,6 @@
         private Label label31;
         private Button button3;
         private PictureBox settingsBtn;
+        private Label connected;
     }
 }

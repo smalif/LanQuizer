@@ -5,6 +5,10 @@ using System.Configuration;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+
 
 namespace LanQuizer
 {
@@ -22,6 +26,7 @@ namespace LanQuizer
         public TeacherHome(string teacherName)
         {
             InitializeComponent();
+            connectImg.Visible= false;
             WelcomeTeacher.Text = "Welcome Back, " + LoggedInUser.Name;
         }
 
@@ -383,5 +388,40 @@ namespace LanQuizer
             Settings settingsForm = new Settings(loggedInEmail, loggedInID);
             settingsForm.ShowDialog(); // or Show()
         }
+
+        private void connected_Click(object sender, EventArgs e)
+        {
+            if (IsNetworkConnected())
+            {
+                string ip = GetLocalIPAddress();
+                connected.Text = "CONNECTED\nIP Address: " + ip;
+                connected.ForeColor = Color.Green;
+                connectImg.Visible= true;
+            }
+            else
+            {
+                connected.Text = "NOT CONNECTED";
+                connected.ForeColor = Color.Red;
+            }
+        }
+
+        private bool IsNetworkConnected()
+        {
+            return NetworkInterface.GetIsNetworkAvailable();
+        }
+
+        private string GetLocalIPAddress()
+        {
+            foreach (var ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            return "IP Not Found";
+        }
+
+
     }
 }
