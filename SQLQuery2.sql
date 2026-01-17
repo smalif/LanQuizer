@@ -39,5 +39,6 @@ CREATE TABLE Students
     Section VARCHAR(50),
     Course VARCHAR(50)
 );
+GO
 
 Select * from Students;

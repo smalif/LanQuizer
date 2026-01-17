@@ -940,5 +940,21 @@
         private Label exitBtn;
         private Label minbtn;
         private Button addSection;
+        private GroupBox sectionGroup;
+        private PictureBox pictureBox16;
+        private PictureBox pictureBox18;
+        private PictureBox pictureBox23;
+        private PictureBox pictureBox24;
+        private Label label25;
+        private PictureBox pictureBox25;
+        private Label label26;
+        private PictureBox pictureBox26;
+        private Label label27;
+        private PictureBox pictureBox27;
+        private Label label28;
+        private Label label29;
+        private Label label30;
+        private Label label31;
+        private Button button3;
     }
 }

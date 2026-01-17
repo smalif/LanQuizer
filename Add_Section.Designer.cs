@@ -180,10 +180,11 @@
             // dataView
             // 
             dataView.AutoSize = true;
-            dataView.ForeColor = Color.Lime;
-            dataView.Location = new Point(236, 256);
+            dataView.Font = new Font("Times New Roman", 10.2F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            dataView.ForeColor = Color.FromArgb(0, 64, 0);
+            dataView.Location = new Point(225, 259);
             dataView.Name = "dataView";
-            dataView.Size = new Size(0, 20);
+            dataView.Size = new Size(0, 19);
             dataView.TabIndex = 11;
             // 
             // dataGridView1
@@ -193,7 +194,7 @@
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridView1.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
             dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView1.Location = new Point(106, 118);
+            dataGridView1.Location = new Point(95, 115);
             dataGridView1.Name = "dataGridView1";
             dataGridView1.ReadOnly = true;
             dataGridView1.RowHeadersWidth = 51;
@@ -206,7 +207,7 @@
             DataClose.AutoSize = true;
             DataClose.Font = new Font("ISOCPEUR", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
             DataClose.ForeColor = Color.RosyBrown;
-            DataClose.Location = new Point(467, 119);
+            DataClose.Location = new Point(456, 116);
             DataClose.Name = "DataClose";
             DataClose.Size = new Size(25, 26);
             DataClose.TabIndex = 23;

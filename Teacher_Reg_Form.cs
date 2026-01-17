@@ -19,10 +19,27 @@ namespace LanQuizer
         private string connStr;
         private SqlConnection connect;
 
+        private void ApplyHandCursor(Control parent)
+        {
+            foreach (Control ctrl in parent.Controls)
+            {
+                if (ctrl is Button)
+                {
+                    ctrl.Cursor = Cursors.Hand;
+                }
+
+                // Recursively apply to nested controls (GroupBox, Panel, etc.)
+                if (ctrl.HasChildren)
+                {
+                    ApplyHandCursor(ctrl);
+                }
+            }
+        }
+
         public Teacher_Reg_Form()
         {
             InitializeComponent();
-
+            ApplyHandCursor(this);
             connStr = ConfigurationManager
                       .ConnectionStrings["LanQuizerDB"]
                       .ConnectionString;
@@ -33,12 +50,14 @@ namespace LanQuizer
         private void teacherBtn_Click(object sender, EventArgs e)
         {
             Student student = new Student();
+            ApplyHandCursor(this);
             student.Show();
             this.Hide();
         }
 
         private void exitBtn_Click(object sender, EventArgs e)
         {
+            ApplyHandCursor(this);
             Application.Exit();
         }
 
@@ -49,6 +68,7 @@ namespace LanQuizer
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
+            ApplyHandCursor(this);
             TeacherpassBox.PasswordChar = checkBox1.Checked ? '\0' : '*';
         }
 
@@ -59,6 +79,7 @@ namespace LanQuizer
 
         private void logInBtn_Click(object sender, EventArgs e)
         {
+            ApplyHandCursor(this);
             if (teacherEmail.Text == "" || TeacherID.Text == "" || TeacherpassBox.Text == "")
             {
                 MessageBox.Show("Please fill up all fields!", "Error Message",
@@ -122,5 +143,9 @@ namespace LanQuizer
             }
         }
 
+        private void Teacher_Reg_Form_Load(object sender, EventArgs e)
+        {
+            ApplyHandCursor(this);
+        }
     }
 }

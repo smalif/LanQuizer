@@ -5,9 +5,27 @@ namespace LanQuizer
 {
     public partial class Student : Form
     {
+
+        private void ApplyHandCursor(Control parent)
+        {
+            foreach (Control ctrl in parent.Controls)
+            {
+                if (ctrl is Button)
+                {
+                    ctrl.Cursor = Cursors.Hand;
+                }
+
+                // Recursively apply to nested controls (GroupBox, Panel, etc.)
+                if (ctrl.HasChildren)
+                {
+                    ApplyHandCursor(ctrl);
+                }
+            }
+        }
         public Student()
         {
             InitializeComponent();
+            ApplyHandCursor(this);
         }
 
         [DllImport("user32.dll")]
@@ -36,6 +54,7 @@ namespace LanQuizer
 
         private void exitBtn_Click(object sender, EventArgs e)
         {
+            ApplyHandCursor(this);
             Application.Exit();
         }
 
@@ -46,6 +65,7 @@ namespace LanQuizer
 
         private void teacherBtn_Click(object sender, EventArgs e)
         {
+            ApplyHandCursor(this);
             Teacher_Reg_Form teacher = new Teacher_Reg_Form();
             teacher.Show();
             this.Hide();

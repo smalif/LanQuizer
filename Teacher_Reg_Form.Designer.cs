@@ -236,6 +236,7 @@
             Name = "Teacher_Reg_Form";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Teacher_Reg_Form";
+            Load += Teacher_Reg_Form_Load;
             Logo.ResumeLayout(false);
             Logo.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();

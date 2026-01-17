@@ -9,9 +9,6 @@ using Microsoft.Data.SqlClient;
 
 
 
-
-
-
 namespace LanQuizer
 {
     public partial class Add_Section : Form
@@ -19,6 +16,9 @@ namespace LanQuizer
 
         DataTable studentTable = new DataTable();
         string idPattern = @"^\d{2}-\d{5}-\d{1}$";
+        // For pre-filling Section and Course when modifying
+        public string PreFillSection { get; set; } = "";
+        public string PreFillCourse { get; set; } = "";
 
 
         public Add_Section()
@@ -45,6 +45,15 @@ namespace LanQuizer
             studentTable.Columns.Add("StudentName");
             dataGridView1.Visible = false;
             DataClose.Visible = false;
+
+            // Pre-fill section/course if set (for modification)
+            if (!string.IsNullOrEmpty(PreFillSection))
+                SectionCombo.Text = PreFillSection;
+
+            if (!string.IsNullOrEmpty(PreFillCourse))
+                courseCombo.Text = PreFillCourse;
+
+            LoadExistingSectionsCourses(); // populate ComboBox suggestions
         }
 
         private void ReadExcel(string path)
@@ -207,8 +216,9 @@ namespace LanQuizer
                     // 2️⃣ Insert new students
                     foreach (DataRow row in studentTable.Rows)
                     {
-                        string insertQuery = "INSERT INTO Students (StudentID, StudentName, Section, Course) " +
-                                             "VALUES (@id, @name, @section, @course)";
+
+                     string insertQuery = "INSERT INTO Students (StudentID, StudentName, Section, Course) " + "VALUES (@id, @name, @section, @course)";
+
                         using (SqlCommand cmd = new SqlCommand(insertQuery, connect))
                         {
                             cmd.Parameters.AddWithValue("@id", row["StudentID"].ToString());
