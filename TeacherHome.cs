@@ -37,7 +37,7 @@ namespace LanQuizer
 
         private void TeacherHome_Load(object sender, EventArgs e)
         {
-
+            addSection.Visible = false;
         }
 
         private void createQuizBtn_Click(object sender, EventArgs e)
@@ -83,16 +83,42 @@ namespace LanQuizer
         private void exitBtn_Click(object sender, EventArgs e)
         {
             DialogResult result = MessageBox.Show(
-                "Are you sure you want to exit? It needs to Login again.",   
-                "Confirm Exit",                    
-                MessageBoxButtons.YesNo,            
-                MessageBoxIcon.Warning              
+                "Are you sure you want to exit? It needs to Login again.",
+                "Confirm Exit",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning
             );
 
             if (result == DialogResult.Yes)
             {
                 this.Close();
             }
+        }
+
+        private void sectionBtn_Click(object sender, EventArgs e)
+        {
+            draftlbl.Visible = false;
+            quizLbl.Visible = false;
+            groupBox2.Visible = false;
+            label8.Visible = false;
+            groupBox1.Visible = false;
+            addSection.Visible = true;
+        }
+
+        private void myQuizBtn_Click(object sender, EventArgs e)
+        {
+            draftlbl.Visible = true;
+            quizLbl.Visible = true;
+            groupBox2.Visible = true;
+            label8.Visible = true;
+            groupBox1.Visible = true;
+            addSection.Visible = false;
+        }
+
+        private void addSection_Click(object sender, EventArgs e)
+        {
+            Add_Section add_Section = new Add_Section();
+            add_Section.Show();
         }
     }
 }

@@ -49,8 +49,10 @@ namespace LanQuizer
 
         private void pictureBox1_Click_1(object sender, EventArgs e)
         {
+            string teacherName = "Admin Teacher"; // from DataTable in login
+
             this.Hide();
-            TeacherHome teach = new TeacherHome();
+            TeacherHome teach = new TeacherHome(teacherName); // ✅ pass the string
             teach.Show();
         }
 

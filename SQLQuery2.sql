@@ -1,6 +1,7 @@
 ﻿CREATE DATABASE LanQuizerDB;
 GO
 
+--Run this everythime to ensure you are using the correct database(when need to change/modify table)
 USE LanQuizerDB;
 GO
 
@@ -22,3 +23,21 @@ GO
 Select * from Teachers;
 
 
+UPDATE Teachers
+SET TeacherID = '12-34567-3',
+    teacherName = 'Kazi Asif Ahmed',
+    TeacherpassBox = 'admin'
+WHERE TeacherID = '23-53700-3';
+GO
+
+
+CREATE TABLE Students
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    StudentID VARCHAR(20),
+    StudentName VARCHAR(100),
+    Section VARCHAR(50),
+    Course VARCHAR(50)
+);
+
+Select * from Students;

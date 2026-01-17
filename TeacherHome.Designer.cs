@@ -91,6 +91,7 @@
             groupBox3 = new GroupBox();
             sectionBtn = new Button();
             myQuizBtn = new Button();
+            addSection = new Button();
             Logo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)logoutBtn).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
@@ -794,6 +795,7 @@
             sectionBtn.TabIndex = 22;
             sectionBtn.Text = "Sections";
             sectionBtn.UseVisualStyleBackColor = true;
+            sectionBtn.Click += sectionBtn_Click;
             // 
             // myQuizBtn
             // 
@@ -806,12 +808,26 @@
             myQuizBtn.TabIndex = 21;
             myQuizBtn.Text = "My Quizzes";
             myQuizBtn.UseVisualStyleBackColor = false;
+            myQuizBtn.Click += myQuizBtn_Click;
+            // 
+            // addSection
+            // 
+            addSection.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            addSection.ForeColor = SystemColors.ActiveCaptionText;
+            addSection.Location = new Point(1020, 176);
+            addSection.Name = "addSection";
+            addSection.Size = new Size(185, 44);
+            addSection.TabIndex = 23;
+            addSection.Text = "+    Add New Section";
+            addSection.UseVisualStyleBackColor = true;
+            addSection.Click += addSection_Click;
             // 
             // TeacherHome
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1262, 877);
+            Controls.Add(addSection);
             Controls.Add(groupBox3);
             Controls.Add(groupBox1);
             Controls.Add(groupBox2);
@@ -923,5 +939,6 @@
         private PictureBox logoutBtn;
         private Label exitBtn;
         private Label minbtn;
+        private Button addSection;
     }
 }
