@@ -43,6 +43,7 @@
             label2 = new Label();
             logInBtn = new Button();
             exitBtn = new Label();
+            newReg = new Label();
             Logo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
@@ -215,11 +216,25 @@
             exitBtn.Text = "X";
             exitBtn.Click += exitBtn_Click;
             // 
+            // newReg
+            // 
+            newReg.AutoSize = true;
+            newReg.Font = new Font("Times New Roman", 10.2F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            newReg.ForeColor = Color.FromArgb(0, 64, 0);
+            newReg.Location = new Point(381, 582);
+            newReg.Name = "newReg";
+            newReg.Size = new Size(136, 19);
+            newReg.TabIndex = 22;
+            newReg.Text = "Register Account";
+            newReg.TextAlign = ContentAlignment.BottomCenter;
+            newReg.Click += newReg_Click;
+            // 
             // Teacher_Reg_Form
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(641, 620);
+            Controls.Add(newReg);
             Controls.Add(exitBtn);
             Controls.Add(Logo);
             Controls.Add(pictureBox2);
@@ -261,5 +276,6 @@
         private Label label2;
         private Button logInBtn;
         private Label exitBtn;
+        private Label newReg;
     }
 }

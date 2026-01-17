@@ -174,14 +174,21 @@ namespace LanQuizer
                 {
                     connect.Open();
 
-                    // 1️⃣ Check if Section+Course already exists
-                    string checkQuery = "SELECT COUNT(*) FROM Students WHERE Section=@section AND Course=@course";
+                    // Get current logged-in teacher info
+                    string teacherEmail = LoggedInUser.Email;
+                    string teacherID = LoggedInUser.ID;
+
+                    // 1️⃣ Check if Section+Course already exists for this teacher
+                    string checkQuery = "SELECT COUNT(*) FROM Students WHERE Section=@section AND Course=@course AND TeacherEmail=@teacherEmail AND TeacherID=@teacherID";
                     int existingCount = 0;
 
                     using (SqlCommand checkCmd = new SqlCommand(checkQuery, connect))
                     {
                         checkCmd.Parameters.AddWithValue("@section", sectionName);
                         checkCmd.Parameters.AddWithValue("@course", courseName);
+                        checkCmd.Parameters.AddWithValue("@teacherEmail", teacherEmail);
+                        checkCmd.Parameters.AddWithValue("@teacherID", teacherID);
+
                         existingCount = (int)checkCmd.ExecuteScalar();
                     }
 
@@ -199,25 +206,29 @@ namespace LanQuizer
                             return;
                         }
 
-                        // Delete old data for this Section+Course
-                        string deleteQuery = "DELETE FROM Students WHERE Section=@section AND Course=@course";
+                        // Delete old data for this teacher + Section + Course
+                        string deleteQuery = "DELETE FROM Students WHERE Section=@section AND Course=@course AND TeacherEmail=@teacherEmail AND TeacherID=@teacherID";
                         using (SqlCommand deleteCmd = new SqlCommand(deleteQuery, connect))
                         {
                             deleteCmd.Parameters.AddWithValue("@section", sectionName);
                             deleteCmd.Parameters.AddWithValue("@course", courseName);
+                            deleteCmd.Parameters.AddWithValue("@teacherEmail", teacherEmail);
+                            deleteCmd.Parameters.AddWithValue("@teacherID", teacherID);
                             deleteCmd.ExecuteNonQuery();
                         }
+
+                        // Reset identity only for this teacher's students (optional, can reset globally too)
                         using (SqlCommand resetCmd = new SqlCommand("DBCC CHECKIDENT ('Students', RESEED, 0)", connect))
                         {
                             resetCmd.ExecuteNonQuery();
                         }
                     }
 
-                    // 2️⃣ Insert new students
+                    // 2️⃣ Insert new students with teacher info
                     foreach (DataRow row in studentTable.Rows)
                     {
-
-                     string insertQuery = "INSERT INTO Students (StudentID, StudentName, Section, Course) " + "VALUES (@id, @name, @section, @course)";
+                        string insertQuery = "INSERT INTO Students (StudentID, StudentName, Section, Course, TeacherEmail, TeacherID) " +
+                                             "VALUES (@id, @name, @section, @course, @teacherEmail, @teacherID)";
 
                         using (SqlCommand cmd = new SqlCommand(insertQuery, connect))
                         {
@@ -225,6 +236,8 @@ namespace LanQuizer
                             cmd.Parameters.AddWithValue("@name", row["StudentName"].ToString());
                             cmd.Parameters.AddWithValue("@section", sectionName);
                             cmd.Parameters.AddWithValue("@course", courseName);
+                            cmd.Parameters.AddWithValue("@teacherEmail", teacherEmail);
+                            cmd.Parameters.AddWithValue("@teacherID", teacherID);
                             cmd.ExecuteNonQuery();
                         }
                     }
@@ -237,7 +250,6 @@ namespace LanQuizer
                     studentTable.Rows.Clear();
                     dataGridView1.DataSource = null;
                     dataView.Text = "0 students found";
-
                 }
                 catch (Exception ex)
                 {
@@ -248,6 +260,7 @@ namespace LanQuizer
                     this.Close(); // Always close Add_Section form after operation
                 }
             }
+
         }
 
 

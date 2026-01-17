@@ -154,5 +154,13 @@ namespace LanQuizer
         {
             ApplyHandCursor(this);
         }
+
+        private void newReg_Click(object sender, EventArgs e)
+        {
+            NewRegistration_Teacher newRegForm = new NewRegistration_Teacher();
+            newRegForm.Show();
+            this.Hide();
+            ApplyHandCursor(this);
+        }
     }
 }

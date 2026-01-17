@@ -13,6 +13,7 @@ namespace LanQuizer
 
         private string teacherEmail;
         private string teacherID;
+        private string teacherName;
         public TeacherHome()
         {
             InitializeComponent();
@@ -21,7 +22,7 @@ namespace LanQuizer
         public TeacherHome(string teacherName)
         {
             InitializeComponent();
-            WelcomeTeacher.Text = "Welcome Back, " + teacherName;
+            WelcomeTeacher.Text = "Welcome Back, " + LoggedInUser.Name;
         }
 
         public TeacherHome(string email, string id)
@@ -31,6 +32,7 @@ namespace LanQuizer
             // Store logged-in user info
             teacherEmail = email;
             teacherID = id;
+
         }
 
         private void TeacherHome_Load(object sender, EventArgs e)
@@ -113,131 +115,141 @@ namespace LanQuizer
             using (SqlConnection connect = new SqlConnection(connStr))
             {
                 connect.Open();
-                string query = "SELECT DISTINCT Section, Course FROM Students ORDER BY Section, Course";
+
+                // ✅ Filter by logged-in teacher
+                string query = "SELECT DISTINCT Section, Course " +
+                               "FROM Students " +
+                               "WHERE TeacherEmail = @teacherEmail AND TeacherID = @teacherID " +
+                               "ORDER BY Section, Course";
+
                 using (SqlCommand cmd = new SqlCommand(query, connect))
-                using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    bool hasSections = false;
+                    cmd.Parameters.AddWithValue("@teacherEmail", LoggedInUser.Email);
+                    cmd.Parameters.AddWithValue("@teacherID", LoggedInUser.ID);
 
-                    while (reader.Read())
+                    using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        hasSections = true;
+                        bool hasSections = false;
 
-                        string sectionName = reader["Section"].ToString();
-                        string courseName = reader["Course"].ToString();
-
-                        GroupBox gb = new GroupBox
+                        while (reader.Read())
                         {
-                            Text = $"Section: {sectionName}",
-                            Width = gbWidth,
-                            Height = gbHeight,
-                            Top = yPos,
-                            Left = xPos,
-                            Font = new Font("Times New Roman", 14, FontStyle.Bold)
-                        };
+                            hasSections = true;
 
-                        Label courseLbl = new Label
-                        {
-                            Text = courseName,
-                            Font = new Font("Times New Roman", 11, FontStyle.Regular),
-                            ForeColor = Color.DimGray,
-                            Top = 35,
-                            Left = 10,
-                            AutoSize = true
-                        };
-                        gb.Controls.Add(courseLbl);
+                            string sectionName = reader["Section"].ToString();
+                            string courseName = reader["Course"].ToString();
 
-
-                        Label lblCount = new Label
-                        {
-                            Text = GetStudentCount(sectionName, courseName) + " students",
-                            Top = courseLbl.Bottom + 8,
-                            Left = 10,
-                            AutoSize = true,
-                            Font = new Font("Times New Roman", 11, FontStyle.Regular)
-                        };
-                        gb.Controls.Add(lblCount);
-
-
-                        MessageBox.Show(
-    Properties.Resources.ResourceManager.GetObject("edit") == null
-    ? "Image NOT found"
-    : "Image FOUND"
-);
-                        Button modifyBtn = new Button
-                        {
-                            Text = "Modify",
-                            Width = 80,
-                            Height = 40,
-                            Top = lblCount.Bottom + 10,
-                            Left = 50,
-                            Font = new Font("Times New Roman", 11, FontStyle.Bold),
-                            BackColor = Color.DarkOliveGreen,
-                            ForeColor = Color.White,
-                            Cursor = Cursors.Hand
-                        };
-                        modifyBtn.Click += (s, e) =>
-                        {
-                            Add_Section addForm = new Add_Section
+                            GroupBox gb = new GroupBox
                             {
-                                PreFillSection = sectionName,
-                                PreFillCourse = courseName
+                                Text = $"Section: {sectionName}",
+                                Width = gbWidth,
+                                Height = gbHeight,
+                                Top = yPos,
+                                Left = xPos,
+                                Font = new Font("Times New Roman", 14, FontStyle.Bold)
                             };
-                            addForm.ShowDialog();
-                            LoadSections();
-                        };
-                        modifyBtn.FlatAppearance.BorderSize = 0;
-                        gb.Controls.Add(modifyBtn);
 
-                        Button deleteBtn = new Button
-                        {
-                            Text = "Delete",
-                            Width = 80,
-                            Height = 40,
-                            Top = lblCount.Bottom + 10,
-                            Left = 170,
-                            Font = new Font("Times New Roman", 11, FontStyle.Bold),
-                            BackColor = Color.FromArgb(244, 67, 54),
-                            ForeColor = Color.White,
-                            Cursor = Cursors.Hand
-                        };
-                        deleteBtn.Click += (s, e) =>
-                        {
-                            DeleteSection(sectionName, courseName);
-                            LoadSections();
-                        };
-                        gb.Controls.Add(deleteBtn);
+                            Label courseLbl = new Label
+                            {
+                                Text = courseName,
+                                Font = new Font("Times New Roman", 11, FontStyle.Regular),
+                                ForeColor = Color.DimGray,
+                                Top = 35,
+                                Left = 10,
+                                AutoSize = true
+                            };
+                            gb.Controls.Add(courseLbl);
 
-                        // Add GroupBox to panel
-                        panelSections.Controls.Add(gb);
+                            Label lblCount = new Label
+                            {
+                                Text = GetStudentCount(sectionName, courseName) + " students",
+                                Top = courseLbl.Bottom + 8,
+                                Left = 10,
+                                AutoSize = true,
+                                Font = new Font("Times New Roman", 11, FontStyle.Regular)
+                            };
+                            gb.Controls.Add(lblCount);
 
-                        // Move to next column
-                        xPos += gbWidth + gapX;
+                            // Modify button
+                            Button modifyBtn = new Button
+                            {
+                                Text = "Modify",
+                                Width = 80,
+                                Height = 40,
+                                Top = lblCount.Bottom + 10,
+                                Left = 50,
+                                Font = new Font("Times New Roman", 11, FontStyle.Bold),
+                                BackColor = Color.DarkOliveGreen,
+                                ForeColor = Color.White,
+                                Cursor = Cursors.Hand,
+                                FlatStyle = FlatStyle.Flat
+                            };
+                            modifyBtn.FlatAppearance.BorderSize = 0;
+                            modifyBtn.Click += (s, e) =>
+                            {
+                                Add_Section addForm = new Add_Section
+                                {
+                                    PreFillSection = sectionName,
+                                    PreFillCourse = courseName
+                                };
+                                addForm.ShowDialog();
+                                LoadSections();
+                            };
+                            gb.Controls.Add(modifyBtn);
 
-                        // Wrap to next row if width exceeded
-                        if (xPos + gbWidth > panelSections.ClientSize.Width)
-                        {
-                            xPos = xStart;         // reset to first column
-                            yPos += gbHeight + gapY; // move to next row
+                            // Delete button
+                            Button deleteBtn = new Button
+                            {
+                                Text = "Delete",
+                                Width = 80,
+                                Height = 40,
+                                Top = lblCount.Bottom + 10,
+                                Left = 170,
+                                Font = new Font("Times New Roman", 11, FontStyle.Bold),
+                                BackColor = Color.FromArgb(244, 67, 54),
+                                ForeColor = Color.White,
+                                Cursor = Cursors.Hand,
+                                FlatStyle = FlatStyle.Flat
+                            };
+                            deleteBtn.FlatAppearance.BorderSize = 0;
+                            deleteBtn.Click += (s, e) =>
+                            {
+                                DeleteSection(sectionName, courseName);
+                                LoadSections();
+                            };
+                            gb.Controls.Add(deleteBtn);
+
+                            // Add GroupBox to panel
+                            panelSections.Controls.Add(gb);
+
+                            // Move to next column
+                            xPos += gbWidth + gapX;
+
+                            // Wrap to next row if width exceeded
+                            if (xPos + gbWidth > panelSections.ClientSize.Width)
+                            {
+                                xPos = xStart;
+                                yPos += gbHeight + gapY;
+                            }
                         }
-                    }
 
-                    if (!hasSections)
-                    {
-                        Label noSectionLbl = new Label
+                        if (!hasSections)
                         {
-                            Text = "NO SECTIONS ADDED YET",
-                            Top = yStart + 30,
-                            Left = xStart + 400,
-                            AutoSize = true,
-                            ForeColor = Color.Red,
-                            Font = new Font("Times New Roman", 18, FontStyle.Bold)
-                        };
-                        panelSections.Controls.Add(noSectionLbl);
+                            Label noSectionLbl = new Label
+                            {
+                                Text = "NO SECTIONS ADDED YET",
+                                Top = yStart + 30,
+                                Left = xStart + 400,
+                                AutoSize = true,
+                                ForeColor = Color.Red,
+                                Font = new Font("Times New Roman", 18, FontStyle.Bold)
+                            };
+                            panelSections.Controls.Add(noSectionLbl);
+                        }
                     }
                 }
             }
         }
+
 
 
         private void AddNewSection()
@@ -318,7 +330,7 @@ namespace LanQuizer
 
             if (result == DialogResult.Yes)
             {
-                this.Close();
+                System.Windows.Forms.Application.Exit();
             }
         }
 

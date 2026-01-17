@@ -30,15 +30,19 @@ SET TeacherID = '12-34567-3',
 WHERE TeacherID = '23-53700-3';
 GO
 
+Drop Table Students;
 
 CREATE TABLE Students
 (
     Id INT IDENTITY(1,1) PRIMARY KEY,
-    StudentID VARCHAR(20),
+    StudentID VARCHAR(11),
     StudentName VARCHAR(100),
     Section VARCHAR(50),
-    Course VARCHAR(50)
+    Course VARCHAR(50),
+    TeacherID NVARCHAR(10) NOT NULL,
+    TeacherEmail NVARCHAR(400) NOT NULL
 );
 GO
+
 
 Select * from Students;
