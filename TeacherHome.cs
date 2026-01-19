@@ -701,16 +701,175 @@ namespace LanQuizer
 
             return clone;
         }
+        /*=================Helper to Start Quiz ===================*/
+        private List<Question> PrepareRandomizedQuestions(string questionsJson, int quizMark, string featuresJson)
+        {
+            // Deserialize questions
+            var questions = System.Text.Json.JsonSerializer.Deserialize<List<Question>>(questionsJson);
+            if (questions == null || questions.Count == 0)
+                throw new Exception("No questions available.");
+
+            int totalQuestionMarks = questions.Sum(q => q.Marks);
+
+            // Parse features
+            var features = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, bool>>(featuresJson ?? "{}");
+            bool randomQuestions = features != null && features.ContainsKey("RandomQuestions") && features["RandomQuestions"];
+
+            if (randomQuestions)
+            {
+                if (quizMark > totalQuestionMarks)
+                {
+                    MessageBox.Show(
+                        $"Total available question marks is {totalQuestionMarks}. Quiz mark cannot exceed this. Please update.",
+                        "Invalid Quiz Mark", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return null;
+                }
+                else if (quizMark == totalQuestionMarks)
+                {
+                    MessageBox.Show(
+                        "Quiz mark equals total question marks. Random selection may not work as expected. Only question sequence will be randomized.",
+                        "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    // Shuffle questions sequence
+                    return questions.OrderBy(q => Guid.NewGuid()).ToList();
+                }
+                else
+                {
+                    // Randomly select questions to match quizMark exactly
+                    var randomizedList = new List<Question>();
+                    int accumulatedMarks = 0;
+                    var rnd = new Random();
+                    var shuffledQuestions = questions.OrderBy(q => rnd.Next()).ToList();
+
+                    foreach (var q in shuffledQuestions)
+                    {
+                        if (accumulatedMarks + q.Marks <= quizMark)
+                        {
+                            randomizedList.Add(q);
+                            accumulatedMarks += q.Marks;
+                        }
+
+                        if (accumulatedMarks == quizMark)
+                            break;
+                    }
+
+                    return randomizedList;
+                }
+            }
+
+            // If randomization not enabled, return full questions
+            return questions;
+        }
 
         /*================ Quiz Button Events ==================== */
         private void StartQuiz_Click(int quizID)
         {
-            StartQuiz startForm = new StartQuiz();
-            if (startForm.LoadQuizByID(quizID)) // now it works with int ID
+            string connStr = ConfigurationManager.ConnectionStrings["LanQuizerDB"].ConnectionString;
+
+            using (SqlConnection con = new SqlConnection(connStr))
             {
-                startForm.Show();
+                con.Open();
+
+                string query = @"
+        SELECT 
+            ExamName, Course, Section, DurationMinutes, Questions, 
+            StartTime, Status, Features, QuizMark
+        FROM QuizTable
+        WHERE QuizID = @quizID";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@quizID", quizID);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            MessageBox.Show("Quiz not found.", "Error",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        // ---- Read values ----
+                        string examName = reader["ExamName"]?.ToString();
+                        string course = reader["Course"]?.ToString();
+                        string section = reader["Section"]?.ToString();
+                        string durationStr = reader["DurationMinutes"]?.ToString();
+                        string questionsJson = reader["Questions"]?.ToString();
+
+                        string status = reader["Status"] == DBNull.Value ? "Draft" : reader["Status"].ToString();
+                        string startTimeStr = reader["StartTime"] == DBNull.Value ? null : reader["StartTime"].ToString();
+                        string featuresJson = reader["Features"] == DBNull.Value ? "{}" : reader["Features"].ToString();
+
+                        int quizMark = reader["QuizMark"] == DBNull.Value ? 0 : Convert.ToInt32(reader["QuizMark"]);
+
+                        // ---- Do nothing for Completed ----
+                        if (status == "Completed")
+                        {
+                            MessageBox.Show("This quiz has already been completed.",
+                                "Quiz Completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return;
+                        }
+
+                        // ---- مشترক verification: Draft + Scheduled ----
+                        bool hasMissing =
+                            string.IsNullOrWhiteSpace(examName) ||
+                            string.IsNullOrWhiteSpace(course) ||
+                            string.IsNullOrWhiteSpace(section) ||
+                            string.IsNullOrWhiteSpace(durationStr) ||
+                            string.IsNullOrWhiteSpace(questionsJson) ||
+                            quizMark <= 0;
+
+                        if (hasMissing)
+                        {
+                            MessageBox.Show(
+                                "This quiz is incomplete.\n\n" +
+                                "Please make sure the following are filled:\n" +
+                                "- Exam name\n- Course\n- Section\n- Duration\n" +
+                                "- Questions\n- Exam mark\n- Features",
+                                "Incomplete Quiz",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Warning);
+                            return;
+                        }
+
+                        // ---- Scheduled time check ----
+                        if (status == "Scheduled" && DateTime.TryParse(startTimeStr, out DateTime scheduledTime))
+                        {
+                            if (DateTime.Now < scheduledTime)
+                            {
+                                DialogResult dr = MessageBox.Show(
+                                    $"This quiz is scheduled for:\n\n{scheduledTime:yyyy-MM-dd HH:mm}\n\n" +
+                                    "Do you want to start it now?",
+                                    "Scheduled Quiz",
+                                    MessageBoxButtons.YesNo,
+                                    MessageBoxIcon.Question);
+
+                                if (dr != DialogResult.Yes)
+                                    return;
+                            }
+                        }
+
+                        // ---- Pass data to StartQuiz (no randomization here) ----
+                        int duration = int.TryParse(durationStr, out int d) ? d : 0;
+
+                        StartQuiz startForm = new StartQuiz(
+                            examName,
+                            duration.ToString(),
+                            quizMark.ToString(),
+                            featuresJson
+                        );
+
+                        startForm.LoadQuestionsJson(questionsJson); // <-- you implement this
+                        startForm.SetMeta(course, section);         // <-- optional helper
+                        startForm.Show();
+                    }
+                }
             }
         }
+
+        /*================ Edit Quiz Button Event ==================== */
+
 
         private void EditQuiz_Click(object sender, EventArgs e)
         {

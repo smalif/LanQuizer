@@ -23,6 +23,21 @@ namespace LanQuizer
         private string _marks;
         private string _features;
 
+        // ====== Data passed from TeacherHome ======
+        private string _course;
+        private string _section;
+        public void LoadQuestionsJson(string questionsJson)
+        {
+            _questionsJson = questionsJson;
+        }
+
+        public void SetMeta(string course, string section)
+        {
+            _course = course;
+            _section = section;
+        }
+
+
         private string _questionsJson; // NEW: store questions JSON
         private DateTime? _startTime;  // NEW: store quiz scheduled start time (nullable)
 
@@ -51,6 +66,7 @@ namespace LanQuizer
             _features = features;
             this.Load += StartQuiz_Load;
             this.FormClosing += StartQuiz_FormClosing;
+
         }
 
         /*==================For Test: Search Method========================*/

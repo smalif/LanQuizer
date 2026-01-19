@@ -100,6 +100,14 @@ ADD Status NVARCHAR(20) NOT NULL DEFAULT 'Draft';
 
 Select * from QuizTable;
 
+ALTER TABLE QuizTable
+ADD Features NVARCHAR(MAX) NULL;
+GO
+
+ALTER TABLE QuizTable
+ADD QuizMark INT NULL;
+GO
+
 SELECT QuizID, ExamName, Course, Section, DurationMinutes, CreatedAt, StartTime, Status
 FROM QuizTable
 WHERE TeacherEmail = 'teacher@aiub.com'
@@ -178,9 +186,13 @@ Select * from QuizTable;
 UPDATE QuizTable
 SET Status = 'Scheduled',
     StartTime = DATEADD(DAY, 1, GETDATE())  -- schedule for tomorrow
-WHERE QuizID = 5;
+WHERE QuizID = 10;
 
 UPDATE QuizTable
 SET Status = 'Completed',
     EndTime = DATEADD(HOUR, -2, GETDATE())  -- completed 2 hours ago
 WHERE QuizID = 7;
+
+UPDATE QuizTable
+SET QuizMark = 20
+WHERE QuizID = 10;
