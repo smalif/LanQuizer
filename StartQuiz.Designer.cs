@@ -77,6 +77,7 @@
             Logo.Padding = new Padding(50);
             Logo.Size = new Size(629, 106);
             Logo.TabIndex = 22;
+            Logo.Paint += Logo_Paint;
             // 
             // disconnectImg
             // 
@@ -108,7 +109,7 @@
             connected.Size = new Size(70, 19);
             connected.TabIndex = 25;
             connected.Text = "Connect";
-            connected.Click += connected_Click;
+
             // 
             // minbtn
             // 

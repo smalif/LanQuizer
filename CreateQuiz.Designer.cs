@@ -81,7 +81,6 @@
             // groupBox3
             // 
             groupBox3.BackColor = SystemColors.ButtonFace;
-            groupBox3.Controls.Add(questionPanel);
             groupBox3.Controls.Add(questionBtn);
             groupBox3.Controls.Add(myQuizBtn);
             groupBox3.Location = new Point(12, 149);
@@ -93,7 +92,7 @@
             // questionPanel
             // 
             questionPanel.AutoScroll = true;
-            questionPanel.Location = new Point(0, 57);
+            questionPanel.Location = new Point(12, 206);
             questionPanel.Name = "questionPanel";
             questionPanel.Size = new Size(1238, 567);
             questionPanel.TabIndex = 24;
@@ -514,6 +513,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             AutoValidate = AutoValidate.EnablePreventFocusChange;
             ClientSize = new Size(1262, 785);
+            Controls.Add(questionPanel);
             Controls.Add(questionBox);
             Controls.Add(groupBox3);
             Controls.Add(Logo);
