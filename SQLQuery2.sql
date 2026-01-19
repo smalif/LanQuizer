@@ -196,3 +196,41 @@ WHERE QuizID = 7;
 UPDATE QuizTable
 SET QuizMark = 20
 WHERE QuizID = 10;
+
+
+
+INSERT INTO QuizTable 
+(
+    ExamName, 
+    Course, 
+    Section, 
+    DurationMinutes, 
+    QuizPassword, 
+    TeacherID, 
+    TeacherEmail, 
+    Questions,
+    QuizMark,
+    Status
+)
+VALUES 
+(
+    'General Knowledge Quiz',
+    'GK101',
+    'B1',
+    20,
+    'pass123',
+    '23-53700-3',
+    'teacher@aiub.com',
+    '[
+        {"Question":"What is the capital of Bangladesh?","Options":["Dhaka","Chittagong","Khulna"],"CorrectIndex":0,"Marks":2},
+        {"Question":"Which planet is known as the Red Planet?","Options":["Earth","Mars"],"CorrectIndex":1,"Marks":1},
+        {"Question":"Who wrote Hamlet?","Options":["Shakespeare","Tolstoy","Hemingway","Orwell"],"CorrectIndex":0,"Marks":2},
+        {"Question":"Which gas do plants absorb from the atmosphere?","Options":["Oxygen","Carbon Dioxide","Nitrogen"],"CorrectIndex":1,"Marks":1},
+        {"Question":"What is 10 + 15?","Options":["20","25","30"],"CorrectIndex":1,"Marks":1}
+    ]',
+    7,  -- Total marks (sum of Marks: 2+1+2+1+1)
+    'Scheduled'
+);
+GO
+
+Select * from QuizTable;

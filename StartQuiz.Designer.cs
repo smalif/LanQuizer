@@ -48,7 +48,6 @@
             startBtn = new Button();
             refreshIcon = new PictureBox();
             questionLbl = new Label();
-            searchExam = new TextBox();
             Logo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)disconnectImg).BeginInit();
             ((System.ComponentModel.ISupportInitialize)connectImg).BeginInit();
@@ -109,7 +108,6 @@
             connected.Size = new Size(70, 19);
             connected.TabIndex = 25;
             connected.Text = "Connect";
-
             // 
             // minbtn
             // 
@@ -241,7 +239,7 @@
             startBtn.BackColor = Color.FromArgb(192, 255, 192);
             startBtn.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
             startBtn.ForeColor = SystemColors.ActiveCaptionText;
-            startBtn.Location = new Point(239, 377);
+            startBtn.Location = new Point(239, 412);
             startBtn.Name = "startBtn";
             startBtn.Size = new Size(121, 46);
             startBtn.TabIndex = 30;
@@ -252,7 +250,7 @@
             // refreshIcon
             // 
             refreshIcon.Image = (Image)resources.GetObject("refreshIcon.Image");
-            refreshIcon.Location = new Point(387, 383);
+            refreshIcon.Location = new Point(387, 418);
             refreshIcon.Name = "refreshIcon";
             refreshIcon.Size = new Size(26, 33);
             refreshIcon.SizeMode = PictureBoxSizeMode.Zoom;
@@ -269,19 +267,11 @@
             questionLbl.TabIndex = 32;
             questionLbl.Text = "Questions     :";
             // 
-            // searchExam
-            // 
-            searchExam.Location = new Point(336, 175);
-            searchExam.Name = "searchExam";
-            searchExam.Size = new Size(254, 27);
-            searchExam.TabIndex = 33;
-            // 
             // StartQuiz
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(629, 450);
-            Controls.Add(searchExam);
+            ClientSize = new Size(629, 482);
             Controls.Add(questionLbl);
             Controls.Add(refreshIcon);
             Controls.Add(startBtn);
@@ -330,6 +320,5 @@
         private PictureBox connectImg;
         private PictureBox disconnectImg;
         private Label questionLbl;
-        private TextBox searchExam;
     }
 }

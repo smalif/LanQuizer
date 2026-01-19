@@ -1,5 +1,6 @@
 ﻿using EmbedIO;
 using Microsoft.Data.SqlClient;
+using Newtonsoft.Json;
 using System;
 using System.Configuration;
 using System.Data;
@@ -12,7 +13,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Web;
 using System.Windows.Forms;
-using Newtonsoft.Json;
+using static LanQuizer.TeacherHome;
 
 namespace LanQuizer
 {
@@ -644,8 +645,7 @@ namespace LanQuizer
         // ======================= CLASSES =======================
         public class QuizQuestion
         {
-            public int QuestionID { get; set; }
-            public string QuestionText { get; set; }
+            public string Question { get; set; }   // must match JSON key
             public List<string> Options { get; set; } = new List<string>();
             public int CorrectIndex { get; set; }
             public int Marks { get; set; }
@@ -657,7 +657,7 @@ namespace LanQuizer
             public int SelectedOption { get; set; }
         }
 
-        // ======================= SERVER =======================
+
         private void StartWebServer(int port)
         {
             StopWebServer();
@@ -665,192 +665,218 @@ namespace LanQuizer
             string url = $"http://+:{port}/";
 
             webServer = new WebServer(url)
-                .WithAction("/", HttpVerbs.Get, async ctx =>
+
+            // ========================== GET QUIZ PAGE ==========================
+            .WithAction("/", HttpVerbs.Get, async ctx =>
+            {
+                string questionsJson = "[]";
+                int durationMinutes = 0;
+                int quizID = 0;
+
+                using (SqlConnection conn = new SqlConnection(connStr))
                 {
-                    // ================== FETCH QUIZ DATA ==================
-                    string questionsJson = "[]";
-                    int durationMinutes = 0;
-                    int quizID = 0;
-                    try
+                    conn.Open();
+                    string query = "SELECT QuizID, Questions, DurationMinutes, Course FROM QuizTable WHERE ExamName=@examName";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        using (SqlConnection conn = new SqlConnection(connStr))
+                        cmd.Parameters.AddWithValue("@examName", _examName);
+                        using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            conn.Open();
-                            string query = "SELECT QuizID, Questions, DurationMinutes, Course FROM QuizTable WHERE ExamName=@examName";
-                            using (SqlCommand cmd = new SqlCommand(query, conn))
+                            if (reader.Read())
                             {
-                                cmd.Parameters.AddWithValue("@examName", _examName);
-                                using (SqlDataReader reader = cmd.ExecuteReader())
-                                {
-                                    if (reader.Read())
-                                    {
-                                        quizID = Convert.ToInt32(reader["QuizID"]);
-                                        questionsJson = reader["Questions"] == DBNull.Value ? "[]" : reader["Questions"].ToString();
-                                        durationMinutes = reader["DurationMinutes"] == DBNull.Value ? 0 : Convert.ToInt32(reader["DurationMinutes"]);
-                                        _course = reader["Course"].ToString();
-                                        _quizID = quizID;
-                                    }
-                                }
+                                quizID = Convert.ToInt32(reader["QuizID"]);
+                                questionsJson = reader["Questions"]?.ToString() ?? "[]";
+                                durationMinutes = reader["DurationMinutes"] == DBNull.Value ? 0 : Convert.ToInt32(reader["DurationMinutes"]);
+                                _course = reader["Course"]?.ToString();
+                                _quizID = quizID;
                             }
                         }
                     }
-                    catch { questionsJson = "[]"; }
+                }
 
-                    // ================== DESERIALIZE QUESTIONS ==================
-                    var questions = JsonConvert.DeserializeObject<List<QuizQuestion>>(questionsJson) ?? new List<QuizQuestion>();
+                var questions = JsonConvert.DeserializeObject<List<QuizQuestion>>(questionsJson) ?? new List<QuizQuestion>();
 
-                    // ================== RANDOMIZE QUESTIONS & OPTIONS ==================
-                    var rnd = new Random();
-                    questions = questions.OrderBy(q => rnd.Next()).ToList(); // shuffle questions
-                    foreach (var q in questions)
-                        q.Options = q.Options.OrderBy(o => rnd.Next()).ToList(); // shuffle options
+                // ---- total marks ----
+                int totalMarks = questions.Sum(q => q.Marks);
 
-                    // ================== BUILD HTML ==================
-                    StringBuilder html = new StringBuilder();
-                    html.Append("<html><head><title>LAN Quiz</title>");
-                    html.Append("<style>");
-                    html.Append(".question-box { border:1px solid #ccc; padding:15px; margin-bottom:20px; border-radius:10px; text-align:left; }");
-                    html.Append("</style>");
-                    html.Append("<script>");
-                    // ================== COUNTDOWN TIMER ==================
-                    html.Append($@"
-                let duration = {durationMinutes} * 60;
-                function startQuiz() {{
-                    document.getElementById('startPopup').style.display='none';
-                    document.getElementById('quizForm').style.display='block';
-                    let timerInterval = setInterval(function(){{
-                        let minutes = Math.floor(duration/60);
-                        let seconds = duration % 60;
-                        document.getElementById('timer').textContent = minutes + ':' + (seconds < 10 ? '0':'') + seconds;
-                        duration--;
-                        if(duration<0) {{
-                            clearInterval(timerInterval);
-                            alert('Time is up! Submitting...');
-                            document.getElementById('quizForm').submit();
-                        }}
-                    }},1000);
-                }}
-            ");
-                    html.Append("</script></head><body style='font-family:Arial; text-align:center;'>");
+                // ---- shuffle questions + options ONCE ----
+                var rnd = new Random();
+                questions = questions.OrderBy(q => rnd.Next()).ToList();
 
-                    html.Append($"<h1>Exam: {_examName}</h1>");
-                    html.Append($"<p>Duration: {durationMinutes} minutes | Total Marks: {_totalMarks}</p>");
-
-                    // ================== POPUP BEFORE QUIZ ==================
-                    html.Append(@"
-                <div id='startPopup' style='border:2px solid #333; padding:20px; border-radius:10px; display:block;'>
-                    <h3>Ready to start the quiz?</h3>
-                    <button onclick='startQuiz()' style='padding:10px 20px;'>Start Quiz</button>
-                </div>
-            ");
-
-                    // ================== QUIZ FORM ==================
-                    html.Append($"<form id='quizForm' method='POST' action='/submit' style='display:none;'>");
-                    html.Append("<div id='timer' style='font-weight:bold; font-size:20px; margin-bottom:15px;'></div>");
-
-                    int qNo = 1;
-                    foreach (var q in questions)
-                    {
-                        html.Append("<div class='question-box'>");
-                        html.Append($"<p><strong>Q{qNo}: {q.QuestionText}</strong></p>");
-                        for (int i = 0; i < q.Options.Count; i++)
-                            html.Append($"<input type='radio' name='q{qNo}' value='{i}' required> {q.Options[i]}<br>");
-                        html.Append("</div>");
-                        qNo++;
-                    }
-
-                    // ================== STUDENT INFO ==================
-                    html.Append("<div style='margin-bottom:20px;'>");
-                    html.Append("Student ID: <input type='text' name='studentId' required><br>");
-                    html.Append("Section: <input type='text' name='section' required><br>");
-                    html.Append("</div>");
-
-                    html.Append("<button type='submit' style='padding:10px 20px; font-size:16px;'>Submit</button>");
-                    html.Append("</form></body></html>");
-
-                    await ctx.SendStringAsync(html.ToString(), "text/html", Encoding.UTF8);
-                })
-                .WithAction("/submit", HttpVerbs.Post, async ctx =>
+                foreach (var q in questions)
                 {
-                    // ================== PARSE FORM ==================
-                    string body;
-                    using (var reader = new StreamReader(ctx.Request.InputStream, ctx.Request.ContentEncoding))
-                        body = await reader.ReadToEndAsync();
+                    string correctText = q.Options[q.CorrectIndex];
+                    q.Options = q.Options.OrderBy(o => rnd.Next()).ToList();
+                    q.CorrectIndex = q.Options.IndexOf(correctText);
+                }
 
-                    var form = HttpUtility.ParseQueryString(body);
-                    string studentId = form["studentId"];
-                    string section = form["section"];
-                    DateTime submitTime = DateTime.Now;
+                string shuffledJson = JsonConvert.SerializeObject(questions);
 
-                    // ================== FETCH QUESTIONS ==================
-                    string questionsJson = "";
-                    using (SqlConnection conn = new SqlConnection(connStr))
+                // ================== BUILD HTML ==================
+                StringBuilder html = new StringBuilder();
+                html.Append("<html><head><title>LAN Quiz</title>");
+                html.Append("<style>");
+                html.Append(".question-box{border:1px solid #ccc;padding:15px;margin-bottom:20px;border-radius:10px;text-align:left}");
+                html.Append("</style>");
+
+                html.Append("<script>");
+                html.Append($@"
+let duration = {durationMinutes} * 60;
+
+function startQuiz() {{
+  var sid = document.getElementById('studentId').value;
+  var sec = document.getElementById('section').value;
+  if(!sid || !sec) {{
+    alert('Enter Student ID and Section');
+    return;
+  }}
+
+  document.getElementById('formStudentId').value = sid;
+  document.getElementById('formSection').value = sec;
+
+  document.getElementById('startPopup').style.display='none';
+  document.getElementById('quizForm').style.display='block';
+
+  let timerInterval = setInterval(function(){{
+    let m = Math.floor(duration/60);
+    let s = duration % 60;
+    document.getElementById('timer').textContent = m + ':' + (s<10?'0':'') + s;
+    duration--;
+    if(duration<0){{
+      clearInterval(timerInterval);
+      alert('Time up! Submitting...');
+      document.getElementById('quizForm').submit();
+    }}
+  }},1000);
+}}
+</script>");
+
+                html.Append("</head><body style='font-family:Arial;text-align:center'>");
+
+                html.Append($"<h1>Exam: {_examName}</h1>");
+                html.Append($"<p>Duration: {durationMinutes} minutes | Total Marks: {totalMarks}</p>");
+
+                // -------- POPUP --------
+                html.Append(@"
+<div id='startPopup' style='border:2px solid #333;padding:20px;border-radius:10px;display:block'>
+  <h3>Enter Student Info</h3>
+  Student ID: <input type='text' id='studentId'><br><br>
+  Section: <input type='text' id='section'><br><br>
+  <button onclick='startQuiz()'>Start Quiz</button>
+</div>");
+
+                // -------- FORM --------
+                html.Append("<form id='quizForm' method='POST' action='/submit' style='display:none'>");
+                html.Append("<div id='timer' style='font-weight:bold;font-size:20px;margin-bottom:15px'></div>");
+
+                int qNo = 1;
+                foreach (var q in questions)
+                {
+                    html.Append("<div class='question-box'>");
+                    html.Append($"<p><strong>Q{qNo}: {q.Question}</strong>" + $"<span style='color:#555;font-size:13pz'>(Marks:{q.Marks})</span></p>");
+
+                    for (int i = 0; i < q.Options.Count; i++)
+                        html.Append($"<input type='radio' name='q{qNo}' value='{i}' required> {q.Options[i]}<br>");
+
+                    html.Append("</div>");
+                    qNo++;
+                }
+
+                // hidden fields
+                html.Append("<input type='hidden' name='studentId' id='formStudentId'>");
+                html.Append("<input type='hidden' name='section' id='formSection'>");
+                html.Append("<input type='hidden' name='shuffledQuestions' id='shuffledQuestions'>");
+
+                html.Append("<button type='submit'>Submit</button>");
+                html.Append("</form>");
+
+                // store shuffled questions
+                html.Append($@"
+<script>
+document.getElementById('shuffledQuestions').value = `{shuffledJson}`;
+</script>");
+
+                html.Append("</body></html>");
+
+                await ctx.SendStringAsync(html.ToString(), "text/html", Encoding.UTF8);
+            })
+
+            // ========================== SUBMIT ==========================
+            .WithAction("/submit", HttpVerbs.Post, async ctx =>
+            {
+                string body;
+                using (var reader = new StreamReader(ctx.Request.InputStream, ctx.Request.ContentEncoding))
+                    body = await reader.ReadToEndAsync();
+
+                var form = HttpUtility.ParseQueryString(body);
+
+                string studentId = form["studentId"];
+                string section = form["section"];
+                string shuffledJson = form["shuffledQuestions"];
+
+                var questions = JsonConvert.DeserializeObject<List<QuizQuestion>>(shuffledJson) ?? new List<QuizQuestion>();
+
+                int score = 0;
+                int totalMarks = questions.Sum(q => q.Marks);
+
+                var studentAnswers = new List<StudentAnswer>();
+
+                for (int i = 0; i < questions.Count; i++)
+                {
+                    string key = $"q{i + 1}";
+                    if (form[key] != null)
                     {
-                        conn.Open();
-                        string query = "SELECT Questions FROM QuizTable WHERE QuizID=@quizId";
-                        using (SqlCommand cmd = new SqlCommand(query, conn))
+                        int selectedIndex = int.Parse(form[key]);
+                        if (selectedIndex == questions[i].CorrectIndex)
+                            score += questions[i].Marks;
+
+                        studentAnswers.Add(new StudentAnswer
                         {
-                            cmd.Parameters.AddWithValue("@quizId", _quizID);
-                            questionsJson = cmd.ExecuteScalar()?.ToString() ?? "[]";
-                        }
+                            QuestionIndex = i,
+                            SelectedOption = selectedIndex
+                        });
                     }
+                }
 
-                    var questions = JsonConvert.DeserializeObject<List<QuizQuestion>>(questionsJson) ?? new List<QuizQuestion>();
-                    int score = 0;
-                    int totalQuestions = questions.Count;
+                using (SqlConnection conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+                    string insert = @"
+INSERT INTO StudentAttempts
+(QuizID, StudentID, Section, Course, RandomizedQuestions, Answers, Score, LoginTime, SubmitTime)
+VALUES
+(@quizId,@studentId,@section,@course,@randQ,@answers,@score,@loginTime,@submitTime)";
 
-                    // ================== RECORD STUDENT ANSWERS ==================
-                    var studentAnswers = new List<StudentAnswer>();
-                    for (int i = 0; i < totalQuestions; i++)
+                    using (SqlCommand cmd = new SqlCommand(insert, conn))
                     {
-                        string key = $"q{i + 1}";
-                        if (form[key] != null)
-                        {
-                            int selectedIndex = int.Parse(form[key]);
-                            int correctIndex = questions[i].CorrectIndex;
-                            if (selectedIndex == correctIndex) score++;
-                            studentAnswers.Add(new StudentAnswer { QuestionIndex = i, SelectedOption = selectedIndex });
-                        }
+                        cmd.Parameters.AddWithValue("@quizId", _quizID);
+                        cmd.Parameters.AddWithValue("@studentId", studentId);
+                        cmd.Parameters.AddWithValue("@section", section);
+                        cmd.Parameters.AddWithValue("@course", _course ?? "");
+                        cmd.Parameters.AddWithValue("@randQ", shuffledJson);
+                        cmd.Parameters.AddWithValue("@answers", JsonConvert.SerializeObject(studentAnswers));
+                        cmd.Parameters.AddWithValue("@score", score);
+                        cmd.Parameters.AddWithValue("@loginTime", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@submitTime", DateTime.Now);
+                        cmd.ExecuteNonQuery();
                     }
+                }
 
-                    // ================== INSERT INTO StudentAttempts ==================
-                    using (SqlConnection conn = new SqlConnection(connStr))
-                    {
-                        conn.Open();
-                        string insert = @"
-                    INSERT INTO StudentAttempts
-                    (QuizID, StudentID, Section, Course, RandomizedQuestions, Answers, Score, LoginTime, SubmitTime)
-                    VALUES
-                    (@quizId, @studentId, @section, @course, @randQ, @answers, @score, @loginTime, @submitTime)
-                ";
+                string resultHtml =
+                    $"<html><body style='text-align:center;font-family:Arial'>" +
+                    $"<h1>Result</h1>" +
+                    $"<p>Total Marks: {totalMarks}</p>" +
+                    $"<p>Your Score: {score}</p>" +
+                    $"</body></html>";
 
-                        using (SqlCommand cmd = new SqlCommand(insert, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@quizId", _quizID);
-                            cmd.Parameters.AddWithValue("@studentId", studentId);
-                            cmd.Parameters.AddWithValue("@section", section);
-                            cmd.Parameters.AddWithValue("@course", _course ?? "");
-                            cmd.Parameters.AddWithValue("@randQ", JsonConvert.SerializeObject(questions));
-                            cmd.Parameters.AddWithValue("@answers", JsonConvert.SerializeObject(studentAnswers));
-                            cmd.Parameters.AddWithValue("@score", score);
-                            cmd.Parameters.AddWithValue("@loginTime", DateTime.Now);
-                            cmd.Parameters.AddWithValue("@submitTime", submitTime);
-                            cmd.ExecuteNonQuery();
-                        }
-                    }
-
-                    // ================== SHOW RESULT ==================
-                    string resultHtml = $"<html><body style='text-align:center; font-family:Arial;'>" +
-                                        $"<h1>Result</h1>" +
-                                        $"<p>Total Questions: {totalQuestions}</p>" +
-                                        $"<p>Score: {score}/{totalQuestions}</p>" +
-                                        $"</body></html>";
-
-                    await ctx.SendStringAsync(resultHtml, "text/html", Encoding.UTF8);
-                });
+                await ctx.SendStringAsync(resultHtml, "text/html", Encoding.UTF8);
+            });
 
             webServer.RunAsync();
         }
+
+
+
 
 
 
