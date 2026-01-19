@@ -297,6 +297,7 @@
             Name = "StartQuiz";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Start Quiz";
+            Load += StartQuiz_Load_1;
             Logo.ResumeLayout(false);
             Logo.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)disconnectImg).EndInit();

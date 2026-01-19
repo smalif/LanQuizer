@@ -61,6 +61,7 @@
             label2.Size = new Size(237, 39);
             label2.TabIndex = 6;
             label2.Text = "Save/Start";
+            label2.Click += label2_Click;
             // 
             // label1
             // 

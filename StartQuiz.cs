@@ -22,6 +22,11 @@ namespace LanQuizer
         private string _duration;
         private string _marks;
         private string _features;
+
+        private string _questionsJson; // NEW: store questions JSON
+        private DateTime? _startTime;  // NEW: store quiz scheduled start time (nullable)
+
+
         private bool serverRunning = false;
         private WebServer webServer;
         private int port;
@@ -125,7 +130,7 @@ namespace LanQuizer
             string ip = GetLocalIPAddress();
             IpLbl.Text = "IP Address: " + ip;
 
-            port = GetDynamicPort();
+            port = GetOrCreatePort();
             if (port == -1)
             {
                 portLbl.Text = "No available port";
@@ -439,15 +444,16 @@ namespace LanQuizer
 
             if (!serverRunning)
             {
-                port = GetDynamicPort();
+                port = GetOrCreatePort();
                 if (port == -1)
                 {
-                    MessageBox.Show("No available port to start the server.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("No available port to start the server.", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 StartWebServer(port);
-                OpenFirewallPort(port);
+
 
                 if (linkLbl == null)
                 {
@@ -490,6 +496,106 @@ namespace LanQuizer
             }
         }
 
+        /*========================Store IP=========================*/
+        private int GetOrCreatePort()
+        {
+            int savedPort = 0;
+
+            int.TryParse(ConfigurationManager.AppSettings["LanQuizPort"], out savedPort);
+
+            if (savedPort > 0 && IsPortAvailable(savedPort))
+                return savedPort;
+
+            // Otherwise pick a new free port
+            int newPort = GetDynamicPort();
+            if (newPort == -1) return -1;
+
+            SavePortToConfig(newPort);
+            OpenFirewallPort(newPort);
+
+            return newPort;
+        }
+
+
+        private void SavePortToConfig(int port)
+        {
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+
+            if (config.AppSettings.Settings["LanQuizPort"] != null)
+                config.AppSettings.Settings["LanQuizPort"].Value = port.ToString();
+            else
+                config.AppSettings.Settings.Add("LanQuizPort", port.ToString());
+
+            config.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
+        }
+
+
+        private bool IsPortAvailable(int port)
+        {
+            try
+            {
+                TcpListener listener = new TcpListener(IPAddress.Any, port);
+                listener.Start();
+                listener.Stop();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
+
         private void startLbl_Click(object sender, EventArgs e) { }
+
+        private void StartQuiz_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
+        public bool LoadQuizByID(int quizID)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+                    string query = @"
+                SELECT TOP 1 ExamName, DurationMinutes, Questions, StartTime
+                FROM QuizTable
+                WHERE QuizID = @quizID";
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@quizID", quizID);
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                _examName = reader["ExamName"].ToString();
+                                _duration = reader["DurationMinutes"].ToString();
+                                _questionsJson = reader["Questions"].ToString(); // store JSON string in a new variable
+                                if (reader["StartTime"] != DBNull.Value)
+                                    _startTime = Convert.ToDateTime(reader["StartTime"]);
+
+                                return true;
+                            }
+                            else
+                            {
+                                MessageBox.Show("Quiz not found!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading quiz: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+        }
+
     }
 }

@@ -72,7 +72,39 @@ CREATE TABLE QuizTable
     StartTime DATETIME NULL
 );
 GO
+
+ALTER TABLE QuizTable
+ADD 
+    Status NVARCHAR(20) DEFAULT 'Draft', -- 'Draft', 'Scheduled', 'Completed'
+    EndTime DATETIME NULL;
+    GO
+
+
+ALTER TABLE QuizTable
+ALTER COLUMN Course NVARCHAR(50) NULL;
+
+ALTER TABLE QuizTable
+ALTER COLUMN Section NVARCHAR(50) NULL;
+
+ALTER TABLE QuizTable
+ALTER COLUMN DurationMinutes INT NULL;
+
+ALTER TABLE QuizTable
+ALTER COLUMN QuizPassword NVARCHAR(50) NULL;
+
+ALTER TABLE QuizTable
+ALTER COLUMN Questions NVARCHAR(MAX) NULL;
+
+ALTER TABLE QuizTable
+ADD Status NVARCHAR(20) NOT NULL DEFAULT 'Draft';
+
 Select * from QuizTable;
+
+SELECT QuizID, ExamName, Course, Section, DurationMinutes, CreatedAt, StartTime, Status
+FROM QuizTable
+WHERE TeacherEmail = 'teacher@aiub.com'
+ORDER BY CreatedAt DESC
+
 
 
 CREATE TABLE StudentAttempts
@@ -141,4 +173,14 @@ VALUES
 );
 GO
 
+Select * from QuizTable;
 
+UPDATE QuizTable
+SET Status = 'Scheduled',
+    StartTime = DATEADD(DAY, 1, GETDATE())  -- schedule for tomorrow
+WHERE QuizID = 5;
+
+UPDATE QuizTable
+SET Status = 'Completed',
+    EndTime = DATEADD(HOUR, -2, GETDATE())  -- completed 2 hours ago
+WHERE QuizID = 7;

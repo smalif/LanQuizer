@@ -8,7 +8,7 @@ using System.Windows.Forms;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-
+using System.Text.Json.Serialization;
 
 namespace LanQuizer
 {
@@ -42,7 +42,10 @@ namespace LanQuizer
 
         private void TeacherHome_Load(object sender, EventArgs e)
         {
-
+            QuizPanel.HorizontalScroll.Enabled = false;
+            QuizPanel.HorizontalScroll.Visible = false;
+            QuizPanel.AutoScroll = true;
+            LoadQuizzes();
             //Get IP on startup
             RefreshNetworkStatus();
 
@@ -67,13 +70,25 @@ namespace LanQuizer
 
         private void sectionBtn_Click(object sender, EventArgs e)
         {
+            // Highlight the Section button
             sectionBtn.BackColor = Color.SeaGreen;
             sectionBtn.ForeColor = Color.White;
+            sectionBtn.Font = new Font(sectionBtn.Font, FontStyle.Bold);
+
+            // Reset Quiz button
             myQuizBtn.BackColor = Color.White;
             myQuizBtn.ForeColor = Color.Black;
-            sectionBtn.Font = new Font(sectionBtn.Font, FontStyle.Bold);
             myQuizBtn.Font = new Font(myQuizBtn.Font, FontStyle.Regular);
 
+            // Show the Sections panel
+            Panel panelSections = this.Controls["panelSections"] as Panel;
+            if (panelSections != null)
+                panelSections.Visible = true;
+
+            // Hide the Quiz panel
+            QuizPanel.Visible = false;
+
+            // Hide quiz-specific labels/groupboxes
             draftlbl.Visible = false;
             quizLbl.Visible = false;
             groupBox2.Visible = false;
@@ -81,12 +96,7 @@ namespace LanQuizer
             groupBox1.Visible = false;
             addSection.Visible = true;
 
-            Panel panelSections = this.Controls["panelSections"] as Panel;
-            if (panelSections != null)
-            {
-                panelSections.Visible = true; // Make sure panel is visible
-            }
-
+            // Optionally, reload sections dynamically
             LoadSections();
         }
 
@@ -141,6 +151,7 @@ namespace LanQuizer
                 using (SqlCommand cmd = new SqlCommand(query, connect))
                 {
                     cmd.Parameters.AddWithValue("@teacherEmail", LoggedInUser.Email);
+
                     cmd.Parameters.AddWithValue("@teacherID", LoggedInUser.ID);
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
@@ -352,13 +363,20 @@ namespace LanQuizer
 
         private void myQuizBtn_Click(object sender, EventArgs e)
         {
+            // Highlight the Quiz button
             myQuizBtn.BackColor = Color.SeaGreen;
             myQuizBtn.ForeColor = Color.White;
+            myQuizBtn.Font = new Font(myQuizBtn.Font, FontStyle.Bold);
+
+            // Reset Section button
             sectionBtn.BackColor = Color.White;
             sectionBtn.ForeColor = Color.Black;
-            myQuizBtn.Font = new Font(myQuizBtn.Font, FontStyle.Bold);
             sectionBtn.Font = new Font(sectionBtn.Font, FontStyle.Regular);
 
+            // Show the Quiz panel
+            QuizPanel.Visible = true;
+
+            // Show relevant labels/groupboxes for quizzes
             draftlbl.Visible = true;
             quizLbl.Visible = true;
             groupBox2.Visible = true;
@@ -366,10 +384,13 @@ namespace LanQuizer
             groupBox1.Visible = true;
             addSection.Visible = false;
 
-            // Hide the section panel when viewing quizzes
+            // Hide the Sections panel
             Panel panelSections = this.Controls["panelSections"] as Panel;
             if (panelSections != null)
                 panelSections.Visible = false;
+
+            // Optionally, reload quizzes dynamically
+            LoadQuizzes();
         }
 
         private void createQuizBtn_Click(object sender, EventArgs e)
@@ -448,10 +469,290 @@ namespace LanQuizer
             return "IP Not Found";
         }
 
-        private void startQuiz_Click(object sender, EventArgs e)
+        /*==============Dynamic Quiz====================    */
+
+        public class Question
         {
-            QuizHostForm quizHostForm = new QuizHostForm();
-            quizHostForm.Show();
+            public string QuestionText { get; set; }    // map "Question"
+            public List<string> Options { get; set; }   // map "Options"
+            public int CorrectIndex { get; set; }       // map "CorrectIndex"
+            public int Marks { get; set; }              // map "Marks"
         }
+        private void LoadQuizzes()
+        {
+            QuizPanel.Controls.Clear();
+            QuizPanel.AutoScroll = true; // enable scrolling
+
+            int xStart = 10;
+            int yStart = 10;
+            int gbWidth = 327;
+            int gbHeight = 252;
+            int gapX = 10;
+            int gapY = 10;          // gap between groupboxes
+            int sectionGapY = 30;   // extra gap between status sections
+
+            int xPos = xStart;
+            int yPos = yStart;
+            int rowMaxY = yStart; // track bottom of tallest groupbox in current row
+
+            string connStr = ConfigurationManager.ConnectionStrings["LanQuizerDB"].ConnectionString;
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string query = @"
+            SELECT QuizID, ExamName, Course, Section, DurationMinutes, CreatedAt, StartTime, ISNULL(Status, 'Draft') AS Status, EndTime
+            FROM QuizTable
+            WHERE TeacherEmail = @teacherEmail
+            ORDER BY 
+                CASE 
+                    WHEN ISNULL(Status, 'Draft') = 'Scheduled' THEN 1
+                    WHEN ISNULL(Status, 'Draft') = 'Draft' THEN 2
+                    WHEN ISNULL(Status, 'Draft') = 'Completed' THEN 3
+                    ELSE 4
+                END,
+                CASE
+                    WHEN ISNULL(Status, 'Draft') = 'Scheduled' THEN StartTime
+                    WHEN ISNULL(Status, 'Draft') = 'Draft' THEN CreatedAt
+                    WHEN ISNULL(Status, 'Draft') = 'Completed' THEN EndTime
+                    ELSE CreatedAt
+                END DESC";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@teacherEmail", LoggedInUser.Email);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        bool hasQuizzes = false;
+                        string currentStatus = ""; // track current status group
+
+                        while (reader.Read())
+                        {
+                            hasQuizzes = true;
+
+                            int quizID = Convert.ToInt32(reader["QuizID"]);
+                            string examName = reader["ExamName"].ToString();
+                            string courseName = reader["Course"] == DBNull.Value ? "N/A" : reader["Course"].ToString();
+                            string sectionName = reader["Section"] == DBNull.Value ? "N/A" : reader["Section"].ToString();
+                            string status = reader["Status"].ToString();
+                            string duration = reader["DurationMinutes"] == DBNull.Value ? "N/A" : reader["DurationMinutes"].ToString();
+                            string createdAt = Convert.ToDateTime(reader["CreatedAt"]).ToString("yyyy-MM-dd HH:mm");
+                            string startTime = reader["StartTime"] == DBNull.Value ? "N/A" : Convert.ToDateTime(reader["StartTime"]).ToString("yyyy-MM-dd HH:mm");
+                            string endTime = reader["EndTime"] == DBNull.Value ? "N/A" : Convert.ToDateTime(reader["EndTime"]).ToString("yyyy-MM-dd HH:mm");
+
+                            // If status changes, insert a header with **extra vertical space**
+                            if (status != currentStatus)
+                            {
+                                yPos = rowMaxY + sectionGapY; // add extra gap before new status header
+                                xPos = xStart;
+
+                                Label statusLbl = new Label
+                                {
+                                    Text = status.ToUpper() + " QUIZZES",
+                                    Top = yPos,
+                                    Left = xStart,
+                                    AutoSize = true,
+                                    Font = new Font("Times New Roman", 14, FontStyle.Bold),
+                                    ForeColor = Color.DarkBlue,
+                                };
+                                QuizPanel.Controls.Add(statusLbl);
+
+                                yPos += statusLbl.Height + gapY; // move yPos below header
+                                rowMaxY = yPos; // reset rowMaxY for new status group
+                                currentStatus = status;
+                            }
+
+                            // Create the GroupBox
+                            GroupBox gb = new GroupBox
+                            {
+                                Width = gbWidth,
+                                Height = gbHeight,
+                                Top = yPos,
+                                Left = xPos,
+                                Font = new Font("Times New Roman", 12, FontStyle.Bold),
+                                BackColor = Color.White
+                            };
+
+                            // Add labels
+                            Label lblCourse = new Label { Text = "Course: " + courseName, Top = 20, Left = 15, AutoSize = true, Font = new Font("Times New Roman", 11, FontStyle.Regular) };
+                            Label lblExam = new Label { Text = "Exam: " + examName, Top = lblCourse.Bottom + 5, Left = 15, AutoSize = true, Font = new Font("Times New Roman", 11, FontStyle.Regular) };
+                            Label lblSection = new Label { Text = "Section: " + sectionName, Top = lblExam.Bottom + 5, Left = 15, AutoSize = true, Font = new Font("Times New Roman", 11, FontStyle.Regular) };
+                            Label lblDuration = new Label { Text = "Duration: " + duration + " mins", Top = lblSection.Bottom + 5, Left = 15, AutoSize = true, Font = new Font("Times New Roman", 11, FontStyle.Regular) };
+                            Label lblCreated = new Label { Text = "Created: " + createdAt, Top = lblDuration.Bottom + 5, Left = 15, AutoSize = true, Font = new Font("Times New Roman", 11, FontStyle.Regular) };
+
+                            Label lblTime = new Label
+                            {
+                                Text = status == "Scheduled" ? "StartTime: " + startTime :
+                                       status == "Completed" ? "Held: " + endTime :
+                                       "StartTime: " + startTime,
+                                Top = lblCreated.Bottom + 5,
+                                Left = 15,
+                                AutoSize = true,
+                                Font = new Font("Times New Roman", 11, FontStyle.Regular)
+                            };
+
+                            // Status label top-right corner
+                            Label lblStatus = new Label
+                            {
+                                Text = status,
+                                Top = 0,
+                                Left = gbWidth - 100, // adjust right alignment
+                                Width = 100,
+                                Height = 25,
+                                Font = new Font("Times New Roman", 11, FontStyle.Bold),
+                                TextAlign = ContentAlignment.MiddleCenter,
+                                ForeColor = status == "Completed" ? Color.White : status == "Scheduled" ? Color.White : Color.White,
+                                BackColor = status == "Completed" ? Color.Green : status == "Scheduled" ? Color.Orange : Color.Red
+                            };
+
+                            gb.Controls.Add(lblCourse);
+                            gb.Controls.Add(lblExam);
+                            gb.Controls.Add(lblSection);
+                            gb.Controls.Add(lblDuration);
+                            gb.Controls.Add(lblCreated);
+                            gb.Controls.Add(lblTime);
+                            gb.Controls.Add(lblStatus);
+
+                            // Buttons
+                            Button startBtn = new Button { Text = "Start Quiz", Width = 90, Height = 35, Top = gbHeight - 55, Left = 10, BackColor = Color.Green, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
+                            startBtn.FlatAppearance.BorderSize = 0;
+                            startBtn.Click += (s, e) => StartQuiz_Click(quizID);
+
+                            Button editBtn = new Button { Text = "Edit", Width = 90, Height = 35, Top = gbHeight - 55, Left = 115, BackColor = Color.Orange, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
+                            editBtn.FlatAppearance.BorderSize = 0;
+
+                            Button deleteBtn = new Button { Text = "Delete", Width = 90, Height = 35, Top = gbHeight - 55, Left = 220, BackColor = Color.Red, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
+                            deleteBtn.FlatAppearance.BorderSize = 0;
+                            deleteBtn.Click += (s, e) => { DeleteQuiz(quizID); LoadQuizzes(); };
+
+                            gb.Controls.Add(startBtn);
+                            gb.Controls.Add(editBtn);
+                            gb.Controls.Add(deleteBtn);
+
+                            QuizPanel.Controls.Add(gb);
+
+                            // Update rowMaxY to include this groupbox
+                            int gbBottom = gb.Bottom;
+                            if (gbBottom > rowMaxY)
+                                rowMaxY = gbBottom;
+
+                            // Move to next column
+                            xPos += gbWidth + gapX;
+
+                            // Wrap to next row
+                            if (xPos + gbWidth > QuizPanel.ClientSize.Width)
+                            {
+                                xPos = xStart;
+                                yPos = rowMaxY + gapY;
+                            }
+                        }
+
+                        if (!hasQuizzes)
+                        {
+                            Label noQuizLbl = new Label
+                            {
+                                Text = "NO QUIZZES ADDED YET",
+                                Top = yStart + 30,
+                                Left = xStart + 350,
+                                AutoSize = true,
+                                ForeColor = Color.Red,
+                                Font = new Font("Times New Roman", 18, FontStyle.Bold)
+                            };
+                            QuizPanel.Controls.Add(noQuizLbl);
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
+
+
+
+        /*================ Helper to Clone Quiz GroupBox ==================== */
+        private GroupBox CloneQuizGroupBox()
+        {
+            GroupBox clone = new GroupBox
+            {
+                Width = quizLbl.Width,
+                Height = quizLbl.Height,
+                Font = quizLbl.Font,
+                BackColor = quizLbl.BackColor
+            };
+
+            foreach (Control ctrl in quizLbl.Controls)
+            {
+                Control copy = (Control)Activator.CreateInstance(ctrl.GetType());
+                copy.Name = ctrl.Name;
+                copy.Text = ctrl.Text;
+                copy.Font = ctrl.Font;
+                copy.Size = ctrl.Size;
+                copy.Location = ctrl.Location;
+                copy.BackColor = ctrl.BackColor;
+                copy.ForeColor = ctrl.ForeColor;
+                copy.Visible = ctrl.Visible;
+
+                clone.Controls.Add(copy);
+            }
+
+            return clone;
+        }
+
+        /*================ Quiz Button Events ==================== */
+        private void StartQuiz_Click(int quizID)
+        {
+            StartQuiz startForm = new StartQuiz();
+            if (startForm.LoadQuizByID(quizID)) // now it works with int ID
+            {
+                startForm.Show();
+            }
+        }
+
+        private void EditQuiz_Click(object sender, EventArgs e)
+        {
+            Button btn = sender as Button;
+            int quizId = (int)btn.Tag;
+
+            MessageBox.Show("Edit quiz later. QuizID: " + quizId);
+        }
+
+        private void DeleteQuiz_Click(object sender, EventArgs e)
+        {
+            Button btn = sender as Button;
+            int quizId = (int)btn.Tag;
+
+            if (MessageBox.Show("Delete this quiz?", "Confirm",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            {
+                DeleteQuiz(quizId);
+                LoadQuizzes();
+            }
+        }
+
+        /*================ Delete Quiz from DB ==================== */
+        private void DeleteQuiz(int quizID)
+        {
+            string connStr = ConfigurationManager.ConnectionStrings["LanQuizerDB"].ConnectionString;
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+                string query = "DELETE FROM QuizTable WHERE QuizID=@quizID";
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@quizID", quizID);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private void Schedule_Load(object sender, EventArgs e)
+        {
+            LoadQuizzes();
+        }
+
     }
 }
