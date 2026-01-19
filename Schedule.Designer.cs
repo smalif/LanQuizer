@@ -33,12 +33,6 @@
             label1 = new Label();
             label3 = new Label();
             ScheduleQuiz = new GroupBox();
-            StartNow = new GroupBox();
-            StartSec = new ComboBox();
-            StartCourse = new ComboBox();
-            StartNowBtn = new Button();
-            label6 = new Label();
-            label7 = new Label();
             ScheduleSec = new ComboBox();
             scheduleCourse = new ComboBox();
             scheduleTime = new DateTimePicker();
@@ -46,10 +40,16 @@
             scheduleBtn = new Button();
             label5 = new Label();
             label4 = new Label();
+            StartNowGrp = new GroupBox();
+            StartSection = new ComboBox();
+            StartCourse = new ComboBox();
+            startNowBtn = new Button();
+            label6 = new Label();
+            label7 = new Label();
             scheduleCheck = new RadioButton();
             startNowChk = new RadioButton();
             ScheduleQuiz.SuspendLayout();
-            StartNow.SuspendLayout();
+            StartNowGrp.SuspendLayout();
             SuspendLayout();
             // 
             // label2
@@ -84,7 +84,6 @@
             // 
             // ScheduleQuiz
             // 
-            ScheduleQuiz.Controls.Add(StartNow);
             ScheduleQuiz.Controls.Add(ScheduleSec);
             ScheduleQuiz.Controls.Add(scheduleCourse);
             ScheduleQuiz.Controls.Add(scheduleTime);
@@ -101,74 +100,6 @@
             ScheduleQuiz.TabIndex = 10;
             ScheduleQuiz.TabStop = false;
             ScheduleQuiz.Text = "Schedule Quiz";
-            // 
-            // StartNow
-            // 
-            StartNow.Controls.Add(StartSec);
-            StartNow.Controls.Add(StartCourse);
-            StartNow.Controls.Add(StartNowBtn);
-            StartNow.Controls.Add(label6);
-            StartNow.Controls.Add(label7);
-            StartNow.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            StartNow.Location = new Point(0, 0);
-            StartNow.Name = "StartNow";
-            StartNow.Size = new Size(386, 156);
-            StartNow.TabIndex = 13;
-            StartNow.TabStop = false;
-            StartNow.Text = "Start Quiz";
-            // 
-            // StartSec
-            // 
-            StartSec.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-            StartSec.AutoCompleteSource = AutoCompleteSource.ListItems;
-            StartSec.FormattingEnabled = true;
-            StartSec.Location = new Point(71, 64);
-            StartSec.Name = "StartSec";
-            StartSec.Size = new Size(296, 28);
-            StartSec.TabIndex = 17;
-            StartSec.SelectedIndexChanged += scheduleSec_SelectedIndex;
-            // 
-            // StartCourse
-            // 
-            StartCourse.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-            StartCourse.AutoCompleteSource = AutoCompleteSource.ListItems;
-            StartCourse.FormattingEnabled = true;
-            StartCourse.Location = new Point(71, 30);
-            StartCourse.Name = "StartCourse";
-            StartCourse.Size = new Size(296, 28);
-            StartCourse.TabIndex = 17;
-            StartCourse.SelectedIndexChanged += scheduleCourse_SelectedIndex;
-            // 
-            // StartNowBtn
-            // 
-            StartNowBtn.BackColor = Color.SeaGreen;
-            StartNowBtn.ForeColor = SystemColors.Control;
-            StartNowBtn.Location = new Point(131, 107);
-            StartNowBtn.Name = "StartNowBtn";
-            StartNowBtn.Size = new Size(120, 29);
-            StartNowBtn.TabIndex = 12;
-            StartNowBtn.Text = "Start Now";
-            StartNowBtn.UseVisualStyleBackColor = false;
-            // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Font = new Font("Times New Roman", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label6.Location = new Point(6, 69);
-            label6.Name = "label6";
-            label6.Size = new Size(65, 17);
-            label6.TabIndex = 11;
-            label6.Text = "Section :";
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Font = new Font("Times New Roman", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label7.Location = new Point(6, 35);
-            label7.Name = "label7";
-            label7.Size = new Size(65, 17);
-            label7.TabIndex = 10;
-            label7.Text = "Course :";
             // 
             // ScheduleSec
             // 
@@ -241,6 +172,74 @@
             label4.TabIndex = 10;
             label4.Text = "Course :";
             // 
+            // StartNowGrp
+            // 
+            StartNowGrp.Controls.Add(StartSection);
+            StartNowGrp.Controls.Add(StartCourse);
+            StartNowGrp.Controls.Add(startNowBtn);
+            StartNowGrp.Controls.Add(label6);
+            StartNowGrp.Controls.Add(label7);
+            StartNowGrp.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            StartNowGrp.Location = new Point(12, 125);
+            StartNowGrp.Name = "StartNowGrp";
+            StartNowGrp.Size = new Size(386, 127);
+            StartNowGrp.TabIndex = 17;
+            StartNowGrp.TabStop = false;
+            StartNowGrp.Text = "Start Now";
+            // 
+            // StartSection
+            // 
+            StartSection.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+            StartSection.AutoCompleteSource = AutoCompleteSource.ListItems;
+            StartSection.FormattingEnabled = true;
+            StartSection.Location = new Point(315, 39);
+            StartSection.Name = "StartSection";
+            StartSection.Size = new Size(65, 28);
+            StartSection.TabIndex = 16;
+            StartSection.SelectedIndexChanged += StartSection_SelectedIndexChanged;
+            // 
+            // StartCourse
+            // 
+            StartCourse.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+            StartCourse.AutoCompleteSource = AutoCompleteSource.ListItems;
+            StartCourse.FormattingEnabled = true;
+            StartCourse.Location = new Point(80, 39);
+            StartCourse.Name = "StartCourse";
+            StartCourse.Size = new Size(156, 28);
+            StartCourse.TabIndex = 15;
+            StartCourse.SelectedIndexChanged += StartCourse_SelectedIndexChanged;
+            // 
+            // startNowBtn
+            // 
+            startNowBtn.BackColor = Color.SeaGreen;
+            startNowBtn.ForeColor = SystemColors.Control;
+            startNowBtn.Location = new Point(143, 75);
+            startNowBtn.Name = "startNowBtn";
+            startNowBtn.Size = new Size(94, 29);
+            startNowBtn.TabIndex = 12;
+            startNowBtn.Text = "Start Now";
+            startNowBtn.UseVisualStyleBackColor = false;
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            label6.Location = new Point(240, 42);
+            label6.Name = "label6";
+            label6.Size = new Size(76, 20);
+            label6.TabIndex = 11;
+            label6.Text = "Section :";
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            label7.Location = new Point(6, 42);
+            label7.Name = "label7";
+            label7.Size = new Size(74, 20);
+            label7.TabIndex = 10;
+            label7.Text = "Course :";
+            // 
             // scheduleCheck
             // 
             scheduleCheck.AutoSize = true;
@@ -270,6 +269,7 @@
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(410, 299);
+            Controls.Add(StartNowGrp);
             Controls.Add(startNowChk);
             Controls.Add(scheduleCheck);
             Controls.Add(ScheduleQuiz);
@@ -281,8 +281,8 @@
             Load += Schedule_Load;
             ScheduleQuiz.ResumeLayout(false);
             ScheduleQuiz.PerformLayout();
-            StartNow.ResumeLayout(false);
-            StartNow.PerformLayout();
+            StartNowGrp.ResumeLayout(false);
+            StartNowGrp.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -297,16 +297,16 @@
         private Label label4;
         private DateTimePicker scheduleDate;
         private Button scheduleBtn;
-        private GroupBox StartNow;
-        private Button StartNowBtn;
-        private Label label6;
-        private Label label7;
         private RadioButton scheduleCheck;
         private RadioButton startNowChk;
         private DateTimePicker scheduleTime;
         private ComboBox ScheduleSec;
         private ComboBox scheduleCourse;
-        private ComboBox StartSec;
+        private GroupBox StartNowGrp;
+        private ComboBox StartSection;
         private ComboBox StartCourse;
+        private Button startNowBtn;
+        private Label label6;
+        private Label label7;
     }
 }

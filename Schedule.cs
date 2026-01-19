@@ -30,14 +30,20 @@ namespace LanQuizer
 
         private void Schedule_Load(object sender, EventArgs e)
         {
-            // Set default selection
+            // Force StartNowGrp to display at the designer location
+            StartNowGrp.Visible = true;
+            StartNowGrp.Location = new Point(12, 126);  // keep original Designer position
+            StartNowGrp.BringToFront();
+
+            // Hide ScheduleQuiz initially
+            ScheduleQuiz.Visible = false;
+
+            // Make sure StartNowChk is selected
             startNowChk.Checked = true;
             scheduleCheck.Checked = false;
 
-            // Update visibility based on selected radio button
-            UpdateGroupVisibility();
-
             // Load teacher-specific courses
+            LoadStartCourses();
             LoadCourses();
         }
 
@@ -45,23 +51,25 @@ namespace LanQuizer
 
         private void startNowChk_CheckedChanged(object sender, EventArgs e)
         {
-            UpdateGroupVisibility();
-        }
+            if (startNowChk.Checked)
+            {
+                StartNowGrp.Visible = true;
+                StartNowGrp.Location = new Point(12, 126);  // force position again
+                StartNowGrp.BringToFront();
 
+                ScheduleQuiz.Visible = false;
+            }
+        }
         private void scheduleCheck_CheckedChanged(object sender, EventArgs e)
         {
-            UpdateGroupVisibility();
-        }
+            if (scheduleCheck.Checked)
+            {
+                ScheduleQuiz.Visible = true;
+                ScheduleQuiz.BringToFront();
 
-        private void UpdateGroupVisibility()
-        {
-            // Show StartNow if startNowChk is checked
-            StartNow.Visible = startNowChk.Checked;
-            ScheduleQuiz.Visible = scheduleCheck.Checked;
-
-            // Bring front to avoid overlapping
-            if (StartNow.Visible) StartNow.BringToFront();
-            if (ScheduleQuiz.Visible) ScheduleQuiz.BringToFront();
+                // StartNowGrp stays visible but behind ScheduleQuiz (or you can hide it)
+                StartNowGrp.Visible = false;
+            }
         }
 
         /*================Load Course Function================*/
@@ -124,6 +132,7 @@ namespace LanQuizer
             ValidateScheduleInputs();
         }
 
+
         /*================Load Section Function================*/
         private void scheduleCourse_SelectedIndex(object sender, EventArgs e)
         {
@@ -137,6 +146,21 @@ namespace LanQuizer
         {
             ValidateScheduleInputs();
         }
+
+
+        private void scheduleCourse_Selected(object sender, EventArgs e)
+        {
+            if (scheduleCourse.SelectedIndex != -1)
+            {
+                LoadSections(scheduleCourse.SelectedItem.ToString(), ScheduleSec);
+            }
+        }
+
+        private void scheduleSec_Selected(object sender, EventArgs e)
+        {
+            ValidateScheduleInputs();
+        }
+
         private void LoadSections(string course, ComboBox targetCombo)
         {
             targetCombo.Items.Clear();
@@ -191,5 +215,108 @@ namespace LanQuizer
             StartQuiz scheduleQuizForm = new StartQuiz();
             scheduleQuizForm.Show();
         }
+
+        /*================Start now dropdown================*/
+        private void LoadStartCourses(string previousCourse = null)
+        {
+            StartCourse.Items.Clear();
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string query = @"
+            SELECT DISTINCT Course
+            FROM Students
+            WHERE TeacherEmail = @teacherEmail
+              AND Course IS NOT NULL
+              AND LTRIM(RTRIM(Course)) <> ''";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@teacherEmail", LoggedInTeacherEmail.Trim());
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        bool hasData = false;
+                        while (dr.Read())
+                        {
+                            hasData = true;
+                            StartCourse.Items.Add(dr["Course"].ToString());
+                        }
+
+                        if (hasData && !string.IsNullOrEmpty(previousCourse))
+                        {
+                            int index = StartCourse.Items.IndexOf(previousCourse);
+                            if (index != -1) StartCourse.SelectedIndex = index;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void LoadStartSections(string course, string previousSection = null)
+        {
+            StartSection.Items.Clear();
+
+            using (SqlConnection con = new SqlConnection(connStr))
+            {
+                con.Open();
+
+                string query = @"
+            SELECT DISTINCT Section
+            FROM Students
+            WHERE TeacherEmail = @teacherEmail
+              AND Course = @course
+              AND Section IS NOT NULL
+              AND LTRIM(RTRIM(Section)) <> ''";
+
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@teacherEmail", LoggedInTeacherEmail.Trim());
+                    cmd.Parameters.AddWithValue("@course", course.Trim());
+
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        bool hasData = false;
+                        while (dr.Read())
+                        {
+                            hasData = true;
+                            StartSection.Items.Add(dr["Section"].ToString());
+                        }
+
+                        if (hasData && !string.IsNullOrEmpty(previousSection))
+                        {
+                            int index = StartSection.Items.IndexOf(previousSection);
+                            if (index != -1) StartSection.SelectedIndex = index;
+                        }
+                    }
+                }
+            }
+        }
+
+        // When StartCourse changes, load sections for it
+        private void StartCourse_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (StartCourse.SelectedIndex != -1)
+            {
+                LoadStartSections(StartCourse.SelectedItem.ToString());
+            }
+            ValidateStartInputs();
+        }
+
+        // When StartSection changes, validate inputs
+        private void StartSection_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ValidateStartInputs();
+        }
+        private void ValidateStartInputs()
+        {
+            // Enable the schedule button only if both course and section are selected
+            scheduleBtn.Enabled =
+                StartCourse.SelectedIndex != -1 &&
+                StartSection.SelectedIndex != -1;
+        }
+
+
     }
 }
