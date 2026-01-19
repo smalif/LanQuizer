@@ -26,7 +26,7 @@ namespace LanQuizer
         public TeacherHome(string teacherName)
         {
             InitializeComponent();
-            connectImg.Visible= false;
+            connectImg.Visible = false;
             WelcomeTeacher.Text = "Welcome Back, " + LoggedInUser.Name;
         }
 
@@ -42,6 +42,10 @@ namespace LanQuizer
 
         private void TeacherHome_Load(object sender, EventArgs e)
         {
+
+            //Get IP on startup
+            RefreshNetworkStatus();
+
             addSection.Visible = false;
 
             // Create dynamic panel for sections if not already added
@@ -63,6 +67,13 @@ namespace LanQuizer
 
         private void sectionBtn_Click(object sender, EventArgs e)
         {
+            sectionBtn.BackColor = Color.SeaGreen;
+            sectionBtn.ForeColor = Color.White;
+            myQuizBtn.BackColor = Color.White;
+            myQuizBtn.ForeColor = Color.Black;
+            sectionBtn.Font = new Font(sectionBtn.Font, FontStyle.Bold);
+            myQuizBtn.Font = new Font(myQuizBtn.Font, FontStyle.Regular);
+
             draftlbl.Visible = false;
             quizLbl.Visible = false;
             groupBox2.Visible = false;
@@ -341,6 +352,13 @@ namespace LanQuizer
 
         private void myQuizBtn_Click(object sender, EventArgs e)
         {
+            myQuizBtn.BackColor = Color.SeaGreen;
+            myQuizBtn.ForeColor = Color.White;
+            sectionBtn.BackColor = Color.White;
+            sectionBtn.ForeColor = Color.Black;
+            myQuizBtn.Font = new Font(myQuizBtn.Font, FontStyle.Bold);
+            sectionBtn.Font = new Font(sectionBtn.Font, FontStyle.Regular);
+
             draftlbl.Visible = true;
             quizLbl.Visible = true;
             groupBox2.Visible = true;
@@ -391,17 +409,25 @@ namespace LanQuizer
 
         private void connected_Click(object sender, EventArgs e)
         {
+            RefreshNetworkStatus();
+        }
+
+        private void RefreshNetworkStatus()
+        {
             if (IsNetworkConnected())
             {
                 string ip = GetLocalIPAddress();
                 connected.Text = "CONNECTED\nIP Address: " + ip;
                 connected.ForeColor = Color.Green;
-                connectImg.Visible= true;
+                connectImg.Visible = true;
+                disconnected.Visible = false;
             }
             else
             {
                 connected.Text = "NOT CONNECTED";
                 connected.ForeColor = Color.Red;
+                connectImg.Visible = false;
+                disconnected.Visible = true;
             }
         }
 
@@ -422,6 +448,10 @@ namespace LanQuizer
             return "IP Not Found";
         }
 
-
+        private void startQuiz_Click(object sender, EventArgs e)
+        {
+            QuizHostForm quizHostForm = new QuizHostForm();
+            quizHostForm.Show();
+        }
     }
 }

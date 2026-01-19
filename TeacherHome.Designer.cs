@@ -44,7 +44,7 @@
             pictureBox1 = new PictureBox();
             draftlbl = new Label();
             label8 = new Label();
-            button1 = new Button();
+            startQuiz = new Button();
             label2 = new Label();
             label3 = new Label();
             label4 = new Label();
@@ -95,6 +95,7 @@
             sectionBtn = new Button();
             myQuizBtn = new Button();
             addSection = new Button();
+            disconnected = new PictureBox();
             Logo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)connectImg).BeginInit();
             ((System.ComponentModel.ISupportInitialize)settingsBtn).BeginInit();
@@ -123,6 +124,7 @@
             ((System.ComponentModel.ISupportInitialize)pictureBox21).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox22).BeginInit();
             groupBox3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)disconnected).BeginInit();
             SuspendLayout();
             // 
             // Logo
@@ -130,6 +132,7 @@
             Logo.BackColor = Color.DarkBlue;
             Logo.BackgroundImageLayout = ImageLayout.Zoom;
             Logo.BorderStyle = BorderStyle.FixedSingle;
+            Logo.Controls.Add(disconnected);
             Logo.Controls.Add(connectImg);
             Logo.Controls.Add(connected);
             Logo.Controls.Add(settingsBtn);
@@ -165,12 +168,12 @@
             // 
             connected.AutoSize = true;
             connected.Font = new Font("Times New Roman", 10.2F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            connected.ForeColor = Color.Lime;
+            connected.ForeColor = Color.Gray;
             connected.Location = new Point(962, 28);
             connected.Name = "connected";
-            connected.Size = new Size(87, 19);
+            connected.Size = new Size(70, 19);
             connected.TabIndex = 24;
-            connected.Text = "Connected";
+            connected.Text = "Connect";
             connected.Click += connected_Click;
             // 
             // settingsBtn
@@ -304,15 +307,16 @@
             label8.Text = "Completed Quizzes";
             label8.Click += label8_Click;
             // 
-            // button1
+            // startQuiz
             // 
-            button1.Font = new Font("Times New Roman", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            button1.Location = new Point(12, 205);
-            button1.Name = "button1";
-            button1.Size = new Size(177, 38);
-            button1.TabIndex = 4;
-            button1.Text = "Start Quiz";
-            button1.UseVisualStyleBackColor = true;
+            startQuiz.Font = new Font("Times New Roman", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            startQuiz.Location = new Point(12, 205);
+            startQuiz.Name = "startQuiz";
+            startQuiz.Size = new Size(177, 38);
+            startQuiz.TabIndex = 4;
+            startQuiz.Text = "Start Quiz";
+            startQuiz.UseVisualStyleBackColor = true;
+            startQuiz.Click += startQuiz_Click;
             // 
             // label2
             // 
@@ -399,7 +403,7 @@
             quizLbl.Controls.Add(label4);
             quizLbl.Controls.Add(label3);
             quizLbl.Controls.Add(label2);
-            quizLbl.Controls.Add(button1);
+            quizLbl.Controls.Add(startQuiz);
             quizLbl.Font = new Font("Times New Roman", 12F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
             quizLbl.Location = new Point(12, 272);
             quizLbl.Name = "quizLbl";
@@ -863,6 +867,16 @@
             addSection.UseVisualStyleBackColor = true;
             addSection.Click += addSection_Click;
             // 
+            // disconnected
+            // 
+            disconnected.Image = (Image)resources.GetObject("disconnected.Image");
+            disconnected.Location = new Point(933, 28);
+            disconnected.Name = "disconnected";
+            disconnected.Size = new Size(25, 22);
+            disconnected.SizeMode = PictureBoxSizeMode.Zoom;
+            disconnected.TabIndex = 26;
+            disconnected.TabStop = false;
+            // 
             // TeacherHome
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -914,6 +928,7 @@
             ((System.ComponentModel.ISupportInitialize)pictureBox21).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox22).EndInit();
             groupBox3.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)disconnected).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -929,7 +944,7 @@
         private Button createQuizBtn;
         private Label draftlbl;
         private Label label8;
-        private Button button1;
+        private Button startQuiz;
         private Label label2;
         private Label label3;
         private Label label4;
@@ -1000,5 +1015,6 @@
         private Button button3;
         private PictureBox settingsBtn;
         private Label connected;
+        private PictureBox disconnected;
     }
 }

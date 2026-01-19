@@ -19,7 +19,7 @@ namespace LanQuizer
         // For pre-filling Section and Course when modifying
         public string PreFillSection { get; set; } = "";
         public string PreFillCourse { get; set; } = "";
-
+        private string connStr = ConfigurationManager.ConnectionStrings["LanQuizerDB"].ConnectionString;
 
         public Add_Section()
         {
@@ -128,18 +128,74 @@ namespace LanQuizer
 
         private void viewBtn_Click(object sender, EventArgs e)
         {
-            if (studentTable.Rows.Count == 0)
+            string selectedSection = SectionCombo.Text.Trim();
+            string selectedCourse = courseCombo.Text.Trim();
+
+            if (string.IsNullOrEmpty(selectedSection) || string.IsNullOrEmpty(selectedCourse))
             {
-                MessageBox.Show("No students to display. Please upload an Excel file first.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Please select Section and Course first or Upload Excel File.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            dataGridView1.DataSource = studentTable;
+            // 1️⃣ Check if Excel data exists
+            if (studentTable != null && studentTable.Rows.Count > 0)
+            {
+                dataGridView1.DataSource = studentTable;
+                ShowDataGrid();
+                return;
+            }
+
+            // 2️⃣ If no Excel, fetch from database
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+                    string query = @"
+                SELECT StudentID, StudentName
+                FROM Students
+                WHERE Section = @section 
+                  AND Course = @course
+                  AND TeacherEmail = @teacherEmail
+                  AND TeacherID = @teacherID";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@section", selectedSection);
+                        cmd.Parameters.AddWithValue("@course", selectedCourse);
+                        cmd.Parameters.AddWithValue("@teacherEmail", LoggedInUser.Email);
+                        cmd.Parameters.AddWithValue("@teacherID", LoggedInUser.ID);
+
+                        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                        DataTable dbTable = new DataTable();
+                        adapter.Fill(dbTable);
+
+                        if (dbTable.Rows.Count == 0)
+                        {
+                            MessageBox.Show("No students found for the selected section and course.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            return;
+                        }
+
+                        dataGridView1.DataSource = dbTable;
+                        ShowDataGrid();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error fetching students from database: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // Helper function to display the grid
+        private void ShowDataGrid()
+        {
             dataGridView1.Visible = true;
             DataClose.Visible = true;
             dataGridView1.BringToFront();
             DataClose.BringToFront();
             ResizeDataGridView();
+        
         }
 
         private void DataClose_Click(object sender, EventArgs e)
