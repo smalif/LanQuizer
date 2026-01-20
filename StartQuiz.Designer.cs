@@ -48,6 +48,7 @@
             startBtn = new Button();
             refreshIcon = new PictureBox();
             questionLbl = new Label();
+            timerLbl = new Label();
             Logo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)disconnectImg).BeginInit();
             ((System.ComponentModel.ISupportInitialize)connectImg).BeginInit();
@@ -60,6 +61,7 @@
             Logo.BackColor = Color.DarkBlue;
             Logo.BackgroundImageLayout = ImageLayout.Zoom;
             Logo.BorderStyle = BorderStyle.FixedSingle;
+            Logo.Controls.Add(timerLbl);
             Logo.Controls.Add(disconnectImg);
             Logo.Controls.Add(connectImg);
             Logo.Controls.Add(connected);
@@ -223,6 +225,7 @@
             IpLbl.Size = new Size(161, 23);
             IpLbl.TabIndex = 28;
             IpLbl.Text = "Your IP Address : ";
+            IpLbl.Click += IpLbl_Click;
             // 
             // portLbl
             // 
@@ -266,6 +269,15 @@
             questionLbl.Size = new Size(126, 23);
             questionLbl.TabIndex = 32;
             questionLbl.Text = "Questions     :";
+            // 
+            // timerLbl
+            // 
+            timerLbl.AutoSize = true;
+            timerLbl.Location = new Point(378, 72);
+            timerLbl.Name = "timerLbl";
+            timerLbl.Size = new Size(74, 20);
+            timerLbl.TabIndex = 33;
+            timerLbl.Text = "Time Left:";
             // 
             // StartQuiz
             // 
@@ -320,5 +332,6 @@
         private PictureBox connectImg;
         private PictureBox disconnectImg;
         private Label questionLbl;
+        private Label timerLbl;
     }
 }

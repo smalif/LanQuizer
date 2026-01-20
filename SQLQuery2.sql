@@ -108,6 +108,28 @@ ALTER TABLE QuizTable
 ADD QuizMark INT NULL;
 GO
 
+ALTER TABLE QuizTable
+ADD AllowedQuestion INT NULL;
+GO
+
+UPDATE QuizTable
+SET AllowedQuestion = quizmark
+WHERE AllowedQuestion IS NULL;
+GO
+
+UPDATE QuizTable
+SET Features = '{
+    "ShuffleQuestions": true,
+    "ShuffleOptions": true,
+    "ShowCorrectAnswersAfterSubmission": false
+}'
+WHERE QuizMark = 7;
+
+UPDATE QuizTable
+SET DurationMinutes = 2
+WHERE QuizID = 11;
+
+
 SELECT QuizID, ExamName, Course, Section, DurationMinutes, CreatedAt, StartTime, Status
 FROM QuizTable
 WHERE TeacherEmail = 'teacher@aiub.com'
@@ -143,7 +165,7 @@ CREATE TABLE StudentAttempts
 );
 GO
 Select * from StudentAttempts;
-
+Select * from QuizTable;
 
 /*Dunny Data Insertion for QuizTable*/
 INSERT INTO QuizTable (ExamName, Course, Section, DurationMinutes, QuizPassword, TeacherID, TeacherEmail, Questions)
@@ -214,17 +236,17 @@ INSERT INTO QuizTable
 )
 VALUES 
 (
-    'General Knowledge Quiz',
-    'GK101',
-    'B1',
-    20,
+    'English',
+    'Ba',
+    'B14',
+    2,
     'pass123',
     '23-53700-3',
-    'teacher@aiub.com',
+    'alif@gmail.com',
     '[
-        {"Question":"What is the capital of Bangladesh?","Options":["Dhaka","Chittagong","Khulna"],"CorrectIndex":0,"Marks":2},
+        {"Question":"How?","Options":["Dhaka","Chittagong","Khulna"],"CorrectIndex":0,"Marks":2},
         {"Question":"Which planet is known as the Red Planet?","Options":["Earth","Mars"],"CorrectIndex":1,"Marks":1},
-        {"Question":"Who wrote Hamlet?","Options":["Shakespeare","Tolstoy","Hemingway","Orwell"],"CorrectIndex":0,"Marks":2},
+        {"Question":"Who ","Options":["Shakespeare","Tolstoy","Hemingway","Orwell"],"CorrectIndex":0,"Marks":2},
         {"Question":"Which gas do plants absorb from the atmosphere?","Options":["Oxygen","Carbon Dioxide","Nitrogen"],"CorrectIndex":1,"Marks":1},
         {"Question":"What is 10 + 15?","Options":["20","25","30"],"CorrectIndex":1,"Marks":1}
     ]',
@@ -234,3 +256,4 @@ VALUES
 GO
 
 Select * from QuizTable;
+select * from Teachers;

@@ -264,7 +264,7 @@
             WelcomeTeacher.Size = new Size(118, 20);
             WelcomeTeacher.TabIndex = 3;
             WelcomeTeacher.Text = "Welcome Back";
-            WelcomeTeacher.Click += label2_Click;
+
             // 
             // teacherBtn
             // 
@@ -545,7 +545,6 @@
             label8.Size = new Size(201, 25);
             label8.TabIndex = 4;
             label8.Text = "Completed Quizzes";
-            label8.Click += label8_Click;
             // 
             // button2
             // 

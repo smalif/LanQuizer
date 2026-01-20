@@ -9,15 +9,17 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text.Json.Serialization;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace LanQuizer
 {
     public partial class TeacherHome : Form
     {
-
         private string teacherEmail;
         private string teacherID;
         private string teacherName;
+
         public TeacherHome()
         {
             InitializeComponent();
@@ -33,11 +35,8 @@ namespace LanQuizer
         public TeacherHome(string email, string id)
         {
             InitializeComponent();
-
-            // Store logged-in user info
             teacherEmail = email;
             teacherID = id;
-
         }
 
         private void TeacherHome_Load(object sender, EventArgs e)
@@ -46,21 +45,18 @@ namespace LanQuizer
             QuizPanel.HorizontalScroll.Visible = false;
             QuizPanel.AutoScroll = true;
             LoadQuizzes();
-            //Get IP on startup
             RefreshNetworkStatus();
-
             addSection.Visible = false;
 
-            // Create dynamic panel for sections if not already added
             if (this.Controls["panelSections"] == null)
             {
                 Panel panelSections = new Panel
                 {
                     Name = "panelSections",
-                    Top = 144 + 70, // Below top bar (height = 144)
+                    Top = 144 + 70,
                     Left = 10,
-                    Width = this.ClientSize.Width - 20, // padding left/right
-                    Height = this.ClientSize.Height - 20, // fill remaining form height
+                    Width = this.ClientSize.Width - 20,
+                    Height = this.ClientSize.Height - 20,
                     AutoScroll = true,
                     Visible = false
                 };
@@ -70,25 +66,19 @@ namespace LanQuizer
 
         private void sectionBtn_Click(object sender, EventArgs e)
         {
-            // Highlight the Section button
             sectionBtn.BackColor = Color.SeaGreen;
             sectionBtn.ForeColor = Color.White;
             sectionBtn.Font = new Font(sectionBtn.Font, FontStyle.Bold);
 
-            // Reset Quiz button
             myQuizBtn.BackColor = Color.White;
             myQuizBtn.ForeColor = Color.Black;
             myQuizBtn.Font = new Font(myQuizBtn.Font, FontStyle.Regular);
 
-            // Show the Sections panel
             Panel panelSections = this.Controls["panelSections"] as Panel;
             if (panelSections != null)
                 panelSections.Visible = true;
 
-            // Hide the Quiz panel
             QuizPanel.Visible = false;
-
-            // Hide quiz-specific labels/groupboxes
             draftlbl.Visible = false;
             quizLbl.Visible = false;
             groupBox2.Visible = false;
@@ -96,10 +86,8 @@ namespace LanQuizer
             groupBox1.Visible = false;
             addSection.Visible = true;
 
-            // Optionally, reload sections dynamically
             LoadSections();
         }
-
 
         private int GetStudentCount(string section, string course)
         {
@@ -114,7 +102,7 @@ namespace LanQuizer
                 {
                     cmd.Parameters.AddWithValue("@section", section);
                     cmd.Parameters.AddWithValue("@course", course);
-                    count = (int)cmd.ExecuteScalar();
+                    count = Convert.ToInt32(cmd.ExecuteScalar());
                 }
             }
 
@@ -142,16 +130,13 @@ namespace LanQuizer
             {
                 connect.Open();
 
-                // ✅ Filter by logged-in teacher
-                string query = "SELECT DISTINCT Section, Course " +
-                               "FROM Students " +
+                string query = "SELECT DISTINCT Section, Course FROM Students " +
                                "WHERE TeacherEmail = @teacherEmail AND TeacherID = @teacherID " +
                                "ORDER BY Section, Course";
 
                 using (SqlCommand cmd = new SqlCommand(query, connect))
                 {
                     cmd.Parameters.AddWithValue("@teacherEmail", LoggedInUser.Email);
-
                     cmd.Parameters.AddWithValue("@teacherID", LoggedInUser.ID);
 
                     using (SqlDataReader reader = cmd.ExecuteReader())
@@ -196,7 +181,6 @@ namespace LanQuizer
                             };
                             gb.Controls.Add(lblCount);
 
-                            // Modify button
                             Button modifyBtn = new Button
                             {
                                 Text = "Modify",
@@ -223,7 +207,6 @@ namespace LanQuizer
                             };
                             gb.Controls.Add(modifyBtn);
 
-                            // Delete button
                             Button deleteBtn = new Button
                             {
                                 Text = "Delete",
@@ -245,13 +228,10 @@ namespace LanQuizer
                             };
                             gb.Controls.Add(deleteBtn);
 
-                            // Add GroupBox to panel
                             panelSections.Controls.Add(gb);
 
-                            // Move to next column
                             xPos += gbWidth + gapX;
 
-                            // Wrap to next row if width exceeded
                             if (xPos + gbWidth > panelSections.ClientSize.Width)
                             {
                                 xPos = xStart;
@@ -277,13 +257,11 @@ namespace LanQuizer
             }
         }
 
-
-
         private void AddNewSection()
         {
             Add_Section addForm = new Add_Section();
             addForm.ShowDialog();
-            LoadSections(); // refresh after adding
+            LoadSections();
         }
 
         private void ModifySection(string sectionName, string courseName)
@@ -294,7 +272,7 @@ namespace LanQuizer
                 PreFillCourse = courseName
             };
             addForm.ShowDialog();
-            LoadSections(); // refresh after modifying
+            LoadSections();
         }
 
         private void DeleteSection(string sectionName, string courseName)
@@ -320,11 +298,10 @@ namespace LanQuizer
                         cmd.ExecuteNonQuery();
                     }
                 }
-                LoadSections(); // refresh after delete
+                LoadSections();
             }
         }
 
-        // Other buttons/events (logout, quizBtn, min/exit) remain the same
         private void logoutBtn_Click(object sender, EventArgs e)
         {
             DialogResult result = MessageBox.Show(
@@ -341,6 +318,7 @@ namespace LanQuizer
                 form.Show();
             }
         }
+
         private void minbtn_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Minimized;
@@ -363,20 +341,15 @@ namespace LanQuizer
 
         private void myQuizBtn_Click(object sender, EventArgs e)
         {
-            // Highlight the Quiz button
             myQuizBtn.BackColor = Color.SeaGreen;
             myQuizBtn.ForeColor = Color.White;
             myQuizBtn.Font = new Font(myQuizBtn.Font, FontStyle.Bold);
 
-            // Reset Section button
             sectionBtn.BackColor = Color.White;
             sectionBtn.ForeColor = Color.Black;
             sectionBtn.Font = new Font(sectionBtn.Font, FontStyle.Regular);
 
-            // Show the Quiz panel
             QuizPanel.Visible = true;
-
-            // Show relevant labels/groupboxes for quizzes
             draftlbl.Visible = true;
             quizLbl.Visible = true;
             groupBox2.Visible = true;
@@ -384,12 +357,10 @@ namespace LanQuizer
             groupBox1.Visible = true;
             addSection.Visible = false;
 
-            // Hide the Sections panel
             Panel panelSections = this.Controls["panelSections"] as Panel;
             if (panelSections != null)
                 panelSections.Visible = false;
 
-            // Optionally, reload quizzes dynamically
             LoadQuizzes();
         }
 
@@ -400,32 +371,19 @@ namespace LanQuizer
             quiz.Show();
         }
 
-        private void label2_Click(object sender, EventArgs e)
-        {
-            // Optional, can leave empty
-        }
-
-        private void label8_Click(object sender, EventArgs e)
-        {
-            // Optional, can leave empty
-        }
-
         private void addSection_Click(object sender, EventArgs e)
         {
             Add_Section addForm = new Add_Section();
             addForm.ShowDialog();
-            LoadSections(); // refresh after adding
+            LoadSections();
         }
 
         private void settingsBtn_Click(object sender, EventArgs e)
         {
-            // Step 1: Get logged-in teacher info
-            string loggedInEmail = this.teacherEmail; // or wherever you store email of logged-in user
-            string loggedInID = this.teacherID;       // or wherever you store teacher ID
-
-            // Open Settings form and pass the info
+            string loggedInEmail = this.teacherEmail;
+            string loggedInID = this.teacherID;
             Settings settingsForm = new Settings(loggedInEmail, loggedInID);
-            settingsForm.ShowDialog(); // or Show()
+            settingsForm.ShowDialog();
         }
 
         private void connected_Click(object sender, EventArgs e)
@@ -469,31 +427,23 @@ namespace LanQuizer
             return "IP Not Found";
         }
 
-        /*==============Dynamic Quiz====================    */
-
-        public class Question
-        {
-            public string QuestionText { get; set; }    // map "Question"
-            public List<string> Options { get; set; }   // map "Options"
-            public int CorrectIndex { get; set; }       // map "CorrectIndex"
-            public int Marks { get; set; }              // map "Marks"
-        }
+        /*================ Load Quizzes ==================== */
         private void LoadQuizzes()
         {
             QuizPanel.Controls.Clear();
-            QuizPanel.AutoScroll = true; // enable scrolling
+            QuizPanel.AutoScroll = true;
 
             int xStart = 10;
             int yStart = 10;
             int gbWidth = 327;
             int gbHeight = 252;
             int gapX = 10;
-            int gapY = 10;          // gap between groupboxes
-            int sectionGapY = 30;   // extra gap between status sections
+            int gapY = 10;
+            int sectionGapY = 30;
 
             int xPos = xStart;
             int yPos = yStart;
-            int rowMaxY = yStart; // track bottom of tallest groupbox in current row
+            int rowMaxY = yStart;
 
             string connStr = ConfigurationManager.ConnectionStrings["LanQuizerDB"].ConnectionString;
 
@@ -526,7 +476,7 @@ namespace LanQuizer
                     using (SqlDataReader reader = cmd.ExecuteReader())
                     {
                         bool hasQuizzes = false;
-                        string currentStatus = ""; // track current status group
+                        string currentStatus = "";
 
                         while (reader.Read())
                         {
@@ -542,10 +492,9 @@ namespace LanQuizer
                             string startTime = reader["StartTime"] == DBNull.Value ? "N/A" : Convert.ToDateTime(reader["StartTime"]).ToString("yyyy-MM-dd HH:mm");
                             string endTime = reader["EndTime"] == DBNull.Value ? "N/A" : Convert.ToDateTime(reader["EndTime"]).ToString("yyyy-MM-dd HH:mm");
 
-                            // If status changes, insert a header with **extra vertical space**
                             if (status != currentStatus)
                             {
-                                yPos = rowMaxY + sectionGapY; // add extra gap before new status header
+                                yPos = rowMaxY + sectionGapY;
                                 xPos = xStart;
 
                                 Label statusLbl = new Label
@@ -559,12 +508,11 @@ namespace LanQuizer
                                 };
                                 QuizPanel.Controls.Add(statusLbl);
 
-                                yPos += statusLbl.Height + gapY; // move yPos below header
-                                rowMaxY = yPos; // reset rowMaxY for new status group
+                                yPos += statusLbl.Height + gapY;
+                                rowMaxY = yPos;
                                 currentStatus = status;
                             }
 
-                            // Create the GroupBox
                             GroupBox gb = new GroupBox
                             {
                                 Width = gbWidth,
@@ -575,7 +523,6 @@ namespace LanQuizer
                                 BackColor = Color.White
                             };
 
-                            // Add labels
                             Label lblCourse = new Label { Text = "Course: " + courseName, Top = 20, Left = 15, AutoSize = true, Font = new Font("Times New Roman", 11, FontStyle.Regular) };
                             Label lblExam = new Label { Text = "Exam: " + examName, Top = lblCourse.Bottom + 5, Left = 15, AutoSize = true, Font = new Font("Times New Roman", 11, FontStyle.Regular) };
                             Label lblSection = new Label { Text = "Section: " + sectionName, Top = lblExam.Bottom + 5, Left = 15, AutoSize = true, Font = new Font("Times New Roman", 11, FontStyle.Regular) };
@@ -593,17 +540,16 @@ namespace LanQuizer
                                 Font = new Font("Times New Roman", 11, FontStyle.Regular)
                             };
 
-                            // Status label top-right corner
                             Label lblStatus = new Label
                             {
                                 Text = status,
                                 Top = 0,
-                                Left = gbWidth - 100, // adjust right alignment
+                                Left = gbWidth - 100,
                                 Width = 100,
                                 Height = 25,
                                 Font = new Font("Times New Roman", 11, FontStyle.Bold),
                                 TextAlign = ContentAlignment.MiddleCenter,
-                                ForeColor = status == "Completed" ? Color.White : status == "Scheduled" ? Color.White : Color.White,
+                                ForeColor = Color.White,
                                 BackColor = status == "Completed" ? Color.Green : status == "Scheduled" ? Color.Orange : Color.Red
                             };
 
@@ -615,7 +561,6 @@ namespace LanQuizer
                             gb.Controls.Add(lblTime);
                             gb.Controls.Add(lblStatus);
 
-                            // Buttons
                             Button startBtn = new Button { Text = "Start Quiz", Width = 90, Height = 35, Top = gbHeight - 55, Left = 10, BackColor = Color.Green, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
                             startBtn.FlatAppearance.BorderSize = 0;
                             startBtn.Click += (s, e) => StartQuiz_Click(quizID);
@@ -633,15 +578,10 @@ namespace LanQuizer
 
                             QuizPanel.Controls.Add(gb);
 
-                            // Update rowMaxY to include this groupbox
                             int gbBottom = gb.Bottom;
-                            if (gbBottom > rowMaxY)
-                                rowMaxY = gbBottom;
+                            if (gbBottom > rowMaxY) rowMaxY = gbBottom;
 
-                            // Move to next column
                             xPos += gbWidth + gapX;
-
-                            // Wrap to next row
                             if (xPos + gbWidth > QuizPanel.ClientSize.Width)
                             {
                                 xPos = xStart;
@@ -667,101 +607,7 @@ namespace LanQuizer
             }
         }
 
-
-
-
-
-
-
-        /*================ Helper to Clone Quiz GroupBox ==================== */
-        private GroupBox CloneQuizGroupBox()
-        {
-            GroupBox clone = new GroupBox
-            {
-                Width = quizLbl.Width,
-                Height = quizLbl.Height,
-                Font = quizLbl.Font,
-                BackColor = quizLbl.BackColor
-            };
-
-            foreach (Control ctrl in quizLbl.Controls)
-            {
-                Control copy = (Control)Activator.CreateInstance(ctrl.GetType());
-                copy.Name = ctrl.Name;
-                copy.Text = ctrl.Text;
-                copy.Font = ctrl.Font;
-                copy.Size = ctrl.Size;
-                copy.Location = ctrl.Location;
-                copy.BackColor = ctrl.BackColor;
-                copy.ForeColor = ctrl.ForeColor;
-                copy.Visible = ctrl.Visible;
-
-                clone.Controls.Add(copy);
-            }
-
-            return clone;
-        }
-        /*=================Helper to Start Quiz ===================*/
-        private List<Question> PrepareRandomizedQuestions(string questionsJson, int quizMark, string featuresJson)
-        {
-            // Deserialize questions
-            var questions = System.Text.Json.JsonSerializer.Deserialize<List<Question>>(questionsJson);
-            if (questions == null || questions.Count == 0)
-                throw new Exception("No questions available.");
-
-            int totalQuestionMarks = questions.Sum(q => q.Marks);
-
-            // Parse features
-            var features = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, bool>>(featuresJson ?? "{}");
-            bool randomQuestions = features != null && features.ContainsKey("RandomQuestions") && features["RandomQuestions"];
-
-            if (randomQuestions)
-            {
-                if (quizMark > totalQuestionMarks)
-                {
-                    MessageBox.Show(
-                        $"Total available question marks is {totalQuestionMarks}. Quiz mark cannot exceed this. Please update.",
-                        "Invalid Quiz Mark", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return null;
-                }
-                else if (quizMark == totalQuestionMarks)
-                {
-                    MessageBox.Show(
-                        "Quiz mark equals total question marks. Random selection may not work as expected. Only question sequence will be randomized.",
-                        "Notice", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                    // Shuffle questions sequence
-                    return questions.OrderBy(q => Guid.NewGuid()).ToList();
-                }
-                else
-                {
-                    // Randomly select questions to match quizMark exactly
-                    var randomizedList = new List<Question>();
-                    int accumulatedMarks = 0;
-                    var rnd = new Random();
-                    var shuffledQuestions = questions.OrderBy(q => rnd.Next()).ToList();
-
-                    foreach (var q in shuffledQuestions)
-                    {
-                        if (accumulatedMarks + q.Marks <= quizMark)
-                        {
-                            randomizedList.Add(q);
-                            accumulatedMarks += q.Marks;
-                        }
-
-                        if (accumulatedMarks == quizMark)
-                            break;
-                    }
-
-                    return randomizedList;
-                }
-            }
-
-            // If randomization not enabled, return full questions
-            return questions;
-        }
-
-        /*================ Quiz Button Events ==================== */
+        /*================ Start Quiz ==================== */
         private void StartQuiz_Click(int quizID)
         {
             string connStr = ConfigurationManager.ConnectionStrings["LanQuizerDB"].ConnectionString;
@@ -773,7 +619,7 @@ namespace LanQuizer
                 string query = @"
         SELECT 
             ExamName, Course, Section, DurationMinutes, Questions, 
-            StartTime, Status, Features, QuizMark
+            StartTime, Status, Features, QuizMark, AllowedQuestion
         FROM QuizTable
         WHERE QuizID = @quizID";
 
@@ -790,20 +636,17 @@ namespace LanQuizer
                             return;
                         }
 
-                        // ---- Read values ----
                         string examName = reader["ExamName"]?.ToString();
                         string course = reader["Course"]?.ToString();
                         string section = reader["Section"]?.ToString();
+                        string allowedQuestion = reader["AllowedQuestion"] == DBNull.Value ? "N/A" : reader["AllowedQuestion"].ToString();
                         string durationStr = reader["DurationMinutes"]?.ToString();
                         string questionsJson = reader["Questions"]?.ToString();
-
                         string status = reader["Status"] == DBNull.Value ? "Draft" : reader["Status"].ToString();
                         string startTimeStr = reader["StartTime"] == DBNull.Value ? null : reader["StartTime"].ToString();
                         string featuresJson = reader["Features"] == DBNull.Value ? "{}" : reader["Features"].ToString();
-
                         int quizMark = reader["QuizMark"] == DBNull.Value ? 0 : Convert.ToInt32(reader["QuizMark"]);
 
-                        // ---- Do nothing for Completed ----
                         if (status == "Completed")
                         {
                             MessageBox.Show("This quiz has already been completed.",
@@ -811,7 +654,6 @@ namespace LanQuizer
                             return;
                         }
 
-                        // ---- مشترক verification: Draft + Scheduled ----
                         bool hasMissing =
                             string.IsNullOrWhiteSpace(examName) ||
                             string.IsNullOrWhiteSpace(course) ||
@@ -833,7 +675,6 @@ namespace LanQuizer
                             return;
                         }
 
-                        // ---- Scheduled time check ----
                         if (status == "Scheduled" && DateTime.TryParse(startTimeStr, out DateTime scheduledTime))
                         {
                             if (DateTime.Now < scheduledTime)
@@ -850,26 +691,28 @@ namespace LanQuizer
                             }
                         }
 
-                        // ---- Pass data to StartQuiz (no randomization here) ----
                         int duration = int.TryParse(durationStr, out int d) ? d : 0;
 
                         StartQuiz startForm = new StartQuiz(
                             examName,
                             duration.ToString(),
                             quizMark.ToString(),
-                            featuresJson
+                            featuresJson, allowedQuestion,
+                            quizID
                         );
 
-                        startForm.LoadQuestionsJson(questionsJson); // <-- you implement this
-                        startForm.SetMeta(course, section);         // <-- optional helper
+                        startForm.LoadQuestionsJson(questionsJson);
+                        startForm.SetMeta(course, section);
                         startForm.Show();
                     }
                 }
             }
         }
+    
 
-        /*================ Edit Quiz Button Event ==================== */
 
+
+/*================ Edit Quiz Button Event ==================== */
 
         private void EditQuiz_Click(object sender, EventArgs e)
         {
