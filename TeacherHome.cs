@@ -563,14 +563,34 @@ namespace LanQuizer
 
                             Button startBtn = new Button { Text = "Start Quiz", Width = 90, Height = 35, Top = gbHeight - 55, Left = 10, BackColor = Color.Green, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
                             startBtn.FlatAppearance.BorderSize = 0;
+                            // For completed quizzes we will change the label and behavior below
                             startBtn.Click += (s, e) => StartQuiz_Click(quizID);
 
                             Button editBtn = new Button { Text = "Edit", Width = 90, Height = 35, Top = gbHeight - 55, Left = 115, BackColor = Color.Orange, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
                             editBtn.FlatAppearance.BorderSize = 0;
+                            // default behavior (will be overridden for completed state below)
+                            editBtn.Click += (s, e) =>
+                            {
+                                OpenEditorForQuiz(quizID, connStr);
+                            };
 
                             Button deleteBtn = new Button { Text = "Delete", Width = 90, Height = 35, Top = gbHeight - 55, Left = 220, BackColor = Color.Red, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
                             deleteBtn.FlatAppearance.BorderSize = 0;
                             deleteBtn.Click += (s, e) => { DeleteQuiz(quizID); LoadQuizzes(); };
+
+                            // If quiz completed, change buttons: Start -> Start Again (acts like edit), Edit -> View Result
+                            if (status == "Completed")
+                            {
+                                startBtn.Text = "Start Again";
+                                startBtn.BackColor = Color.DarkBlue;
+                                startBtn.Click -= (s, e) => StartQuiz_Click(quizID); // remove previous handler
+                                startBtn.Click += (s, e) => OpenEditorForQuiz(quizID, connStr);
+
+                                editBtn.Text = "View Result";
+                                editBtn.BackColor = Color.Teal;
+                                editBtn.Click -= null; // ensure no duplicate handlers
+                                editBtn.Click += (s, e) => ShowResultsPanel(quizID, examName, courseName, sectionName);
+                            }
 
                             gb.Controls.Add(startBtn);
                             gb.Controls.Add(editBtn);
@@ -759,5 +779,47 @@ namespace LanQuizer
             LoadQuizzes();
         }
 
+        private void OpenEditorForQuiz(int quizID, string connStr)
+        {
+            // open CreateQuiz and load data for editing
+            CreateQuiz editor = new CreateQuiz();
+            editor.Show();
+
+            // load details into editor
+            int qid = quizID;
+            try
+            {
+                using (SqlConnection c2 = new SqlConnection(connStr))
+                {
+                    c2.Open();
+                    using (SqlCommand cmd2 = new SqlCommand("SELECT ExamName, DurationMinutes, AllowedQuestion, QuizPassword, Features, Questions, QuizMark FROM QuizTable WHERE QuizID=@qid", c2))
+                    {
+                        cmd2.Parameters.AddWithValue("@qid", qid);
+                        using (var r2 = cmd2.ExecuteReader())
+                        {
+                            if (r2.Read())
+                            {
+                                string en = r2["ExamName"]?.ToString() ?? string.Empty;
+                                int dur = r2["DurationMinutes"] == DBNull.Value ? 0 : Convert.ToInt32(r2["DurationMinutes"]);
+                                int allowed = r2["AllowedQuestion"] == DBNull.Value ? 0 : Convert.ToInt32(r2["AllowedQuestion"]);
+                                string pwd = r2["QuizPassword"]?.ToString() ?? string.Empty;
+                                string fjson = r2["Features"]?.ToString() ?? "{}";
+                                string qjson = r2["Questions"]?.ToString() ?? "[]";
+                                editor.LoadQuizForEdit(qid, en, dur, allowed, pwd, fjson, qjson);
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private void ShowResultsPanel(int quizID, string examName, string courseName, string sectionName)
+        {
+            // Load and show results in a DataGridView or any other control
+            // This is just a placeholder implementation
+            MessageBox.Show($"Show results for QuizID: {quizID}", "Results",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
     }
 }

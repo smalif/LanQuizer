@@ -723,5 +723,102 @@ WHERE QuizID=@quizId";
         {
             SaveQuizToDatabase(isDraft: true);
         }
+
+        // New: load quiz into the CreateQuiz form for editing
+        public void LoadQuizForEdit(int quizId, string examName, int duration, int allowedMarks, string password, string featuresJson, string questionsJson)
+        {
+            // ensure UI initialized
+            if (!questionsInitialized)
+            {
+                InitializeQuestionPanel();
+            }
+
+            // clear existing question containers UI
+            foreach (var c in questionContainers.ToList())
+            {
+                questionPanel.Controls.Remove(c);
+                c.Dispose();
+            }
+            questionContainers.Clear();
+
+            // set basic fields
+            quizId = quizId; // local
+            examNameTxt.Text = examName ?? string.Empty;
+            durationTxt.Text = duration.ToString();
+            allowedMarksTxt.Text = allowedMarks.ToString();
+            passwordTxt.Text = password ?? string.Empty;
+
+            // parse features
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(featuresJson))
+                {
+                    var fobj = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, bool>>(featuresJson);
+                    if (fobj != null)
+                    {
+                        chkShuffleQuestions.Checked = fobj.TryGetValue("ShuffleQuestions", out bool sq) && sq;
+                        chkShuffleOptions.Checked = fobj.TryGetValue("ShuffleOptions", out bool so) && so;
+                        chkShowAnswers.Checked = fobj.TryGetValue("ShowCorrectAnswersAfterSubmission", out bool sa) && sa;
+                    }
+                }
+            }
+            catch { }
+
+            // parse questionsJson and add containers
+            try
+            {
+                var qlist = System.Text.Json.JsonSerializer.Deserialize<List<QuizQuestionModel>>(questionsJson) ?? new List<QuizQuestionModel>();
+
+                foreach (var q in qlist)
+                {
+                    AddQuestionContainer();
+                    // fill the last container
+                    var container = questionContainers.Last();
+
+                    var qBox = container.Controls.OfType<TextBox>().FirstOrDefault(t => t.Multiline);
+                    var optionBoxes = container.Controls.OfType<TextBox>().Where(t => !t.Multiline && t.Width > 100).ToList();
+                    var correctCombo = container.Controls.OfType<ComboBox>().FirstOrDefault();
+                    var marksBox = container.Controls.OfType<TextBox>().FirstOrDefault(t => !t.Multiline && t.Width <= 80);
+
+                    if (qBox != null) qBox.Text = q.QuestionText ?? string.Empty;
+
+                    for (int i = 0; i < optionBoxes.Count && i < (q.Options?.Count ?? 0); i++)
+                    {
+                        optionBoxes[i].Text = q.Options[i] ?? string.Empty;
+                    }
+
+                    // populate correctCombo items and select
+                    if (correctCombo != null)
+                    {
+                        correctCombo.Items.Clear();
+                        foreach (var ob in optionBoxes.Where(x => !string.IsNullOrWhiteSpace(x.Text)))
+                            correctCombo.Items.Add(ob.Text);
+                        if (q.CorrectIndex >= 0 && q.CorrectIndex < correctCombo.Items.Count)
+                            correctCombo.SelectedIndex = q.CorrectIndex;
+                    }
+
+                    if (marksBox != null) marksBox.Text = q.Marks.ToString();
+                }
+
+                // if there were no questions, add one blank
+                if (questionContainers.Count == 0)
+                    AddQuestionContainer();
+            }
+            catch
+            {
+                // fallback: add one empty question
+                if (questionContainers.Count == 0)
+                    AddQuestionContainer();
+            }
+        }
+
+        // small DTO used only for deserializing stored questions
+        private class QuizQuestionModel
+        {
+            public string QuestionText { get; set; } = string.Empty;
+            public List<string> Options { get; set; } = new List<string>();
+            public int CorrectIndex { get; set; }
+            public int Marks { get; set; }
+        }
     }
 }
