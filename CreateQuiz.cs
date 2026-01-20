@@ -12,6 +12,7 @@ namespace LanQuizer
         private List<Panel> questionContainers = new List<Panel>();
         private Button addNewBtn;
         private Button saveBtn;
+        private bool questionsInitialized = false;
 
         public CreateQuiz()
         {
@@ -19,6 +20,12 @@ namespace LanQuizer
 
             // Set up initial state
             SetupForm();
+            // Auto-realign questions when form resizes
+            this.Resize += (s, e) =>
+            {
+                if (questionsInitialized)
+                    ReorderQuestions();
+            };
         }
 
         private void SetupForm()
@@ -26,9 +33,12 @@ namespace LanQuizer
             // Ensure panels are properly set up
             questionBox.Visible = true;
             questionPanel.Visible = false;
-            questionPanel.AutoScroll = true;
             questionPanel.AutoScrollMargin = new Size(0, 20);
-
+            questionPanel.HorizontalScroll.Enabled = false;   // disable horizontal scrolling
+            questionPanel.HorizontalScroll.Visible = false;   // hide scrollbar
+            questionPanel.AutoScroll = true;                  // keep vertical scrolling
+            questionPanel.AutoScrollMargin = new Size(0, 20);
+            questionPanel.AutoScrollMinSize = new Size(0, 0);
             // Style buttons initially
             myQuizBtn.BackColor = Color.SeaGreen;
             myQuizBtn.ForeColor = Color.White;
@@ -50,12 +60,23 @@ namespace LanQuizer
         // ================= SWITCH PANELS =================
         private void questionBtn_Click_1(object sender, EventArgs e)
         {
-            // Switch to questions panel
-            questionBox.Visible = false;
-            questionPanel.Visible = true;
-            questionPanel.BringToFront();
+            // FORCE VISIBILITY
+            questionBox.Hide();
 
-            // Update button styles
+            questionPanel.Parent = this;              // 🔥 FORCE correct parent
+            questionPanel.Location = new Point(12, 206);
+            questionPanel.Size = new Size(1238, 567);
+
+            questionPanel.Visible = true;
+            questionPanel.Enabled = true;
+
+            questionPanel.BringToFront();
+            questionPanel.Show();
+            questionPanel.Refresh();
+            questionPanel.Invalidate();
+            this.Refresh();
+
+            // Button styling
             questionBtn.BackColor = Color.SeaGreen;
             questionBtn.ForeColor = Color.White;
             questionBtn.Font = new Font(questionBtn.Font, FontStyle.Bold);
@@ -64,18 +85,15 @@ namespace LanQuizer
             myQuizBtn.ForeColor = Color.Black;
             myQuizBtn.Font = new Font(myQuizBtn.Font, FontStyle.Regular);
 
-            // Initialize question panel if not already done
-            if (!questionPanel.Controls.ContainsKey("initialized"))
+            // INIT QUESTIONS UI ONCE
+            if (!questionsInitialized)
             {
                 InitializeQuestionPanel();
-            }
-
-            // Add first question if none exist
-            if (questionContainers.Count == 0)
-            {
                 AddQuestionContainer();
             }
         }
+
+
 
         private void myQuizBtn_Click(object sender, EventArgs e)
         {
@@ -94,267 +112,213 @@ namespace LanQuizer
             questionBtn.Font = new Font(questionBtn.Font, FontStyle.Regular);
         }
 
-        // ================= QUESTION PANEL INITIALIZATION =================
+        //==========Start QUESTION PANEL METHODS==========
+
+        // ================= INITIALIZE QUESTIONS PANEL =================
         private void InitializeQuestionPanel()
         {
-            // Clear existing controls
+            questionsInitialized = true;
+
+            questionPanel.SuspendLayout();
             questionPanel.Controls.Clear();
 
-            // Create and add Save button
+            questionPanel.AutoScroll = true;
+            questionPanel.BackColor = Color.White;
+
+            // ===== SAVE BUTTON =====
             saveBtn = new Button
             {
-                Name = "saveBtn",
                 Text = "💾 Save Questions",
-                Width = 150,
-                Height = 35,
-                Top = 10,
-                Left = questionPanel.Width - 160,
+                Size = new Size(160, 35),
+                Location = new Point(questionPanel.Width - 180, 15),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
                 BackColor = Color.SeaGreen,
                 ForeColor = Color.White
             };
+
             saveBtn.Click += (s, e) =>
             {
-                MessageBox.Show($"Saving {questionContainers.Count} question(s)", "Save",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"Questions: {questionContainers.Count}");
             };
-            questionPanel.Controls.Add(saveBtn);
 
-            // Create and add Add New Question button
+            // ===== ADD QUESTION BUTTON =====
             addNewBtn = new Button
             {
-                Name = "addNewBtn",
                 Text = "➕ Add New Question",
-                Width = 180,
-                Height = 35,
-                Top = 60,
-                Left = (questionPanel.Width - 180) / 2,
-                BackColor = Color.LightBlue,
-                ForeColor = Color.Black
+                Size = new Size(220, 40),
+                Location = new Point((questionPanel.Width - 220) / 2, 65),
+                BackColor = Color.LightSkyBlue,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                Anchor = AnchorStyles.Top
             };
+
+
             addNewBtn.Click += (s, e) => AddQuestionContainer();
+
+            questionPanel.Controls.Add(saveBtn);
             questionPanel.Controls.Add(addNewBtn);
 
-            // Mark panel as initialized
-            questionPanel.Controls.Add(new Control { Name = "initialized", Visible = false });
+            questionPanel.ResumeLayout();
         }
 
-        // ================= ADD QUESTION CONTAINER =================
+
+        // ================= ADD QUESTION =================
         private void AddQuestionContainer()
         {
-            int containerWidth = questionPanel.Width - 60; // Leave margins
-            int containerHeight = 300; // Fixed height for each question
+            int width = questionPanel.ClientSize.Width - 40;
 
-            // Create container panel
+            int top = 0; // temporary, real position set by ReorderQuestions
+
+
+
             Panel container = new Panel
             {
-                Width = containerWidth,
-                Height = containerHeight,
+                Width = width,
+                Height = 280,
+                Location = new Point(20, top),
                 BorderStyle = BorderStyle.FixedSingle,
-                BackColor = Color.WhiteSmoke,
-                Padding = new Padding(10)
+                BackColor = Color.WhiteSmoke
             };
 
-            // Position container
-            if (questionContainers.Count > 0)
+            // ===== TITLE =====
+            Label title = new Label
             {
-                Panel lastContainer = questionContainers.Last();
-                container.Top = lastContainer.Bottom + 10;
-            }
-            else
-            {
-                container.Top = 100; // Start below buttons
-            }
-            container.Left = 20;
-
-            // Question number label
-            Label questionNumberLabel = new Label
-            {
-                Text = $"Question #{questionContainers.Count + 1}",
-                Font = new Font("Arial", 10, FontStyle.Bold),
-                Top = 10,
-                Left = 10,
-                Width = 120
+                Text = $"Question {questionContainers.Count + 1}",
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Location = new Point(10, 10)
             };
-            container.Controls.Add(questionNumberLabel);
 
-            // Question textbox
-            TextBox questionTextBox = new TextBox
+            // ===== QUESTION TEXT =====
+            TextBox questionText = new TextBox
             {
-                Name = "questionText",
-                Top = questionNumberLabel.Bottom + 10,
-                Left = 10,
-                Width = containerWidth - 40,
-                Height = 50,
                 Multiline = true,
+                Size = new Size(width - 40, 50),
+                Location = new Point(10, 35),
                 PlaceholderText = "Enter your question here..."
             };
-            container.Controls.Add(questionTextBox);
 
-            int optionTop = questionTextBox.Bottom + 20;
-            List<TextBox> optionTextBoxes = new List<TextBox>();
+            // ===== OPTIONS =====
+            List<TextBox> optionBoxes = new List<TextBox>();
+            int optTop = questionText.Bottom + 10;
 
-            // Create 4 option textboxes
             for (int i = 0; i < 4; i++)
             {
-                Label optionLabel = new Label
+                Label optLabel = new Label
                 {
                     Text = $"Option {i + 1}:",
-                    Top = optionTop,
-                    Left = 10,
-                    Width = 60
+                    Location = new Point(10, optTop + 4),
+                    Width = 70
                 };
-                container.Controls.Add(optionLabel);
 
-                TextBox optionTextBox = new TextBox
+                TextBox optBox = new TextBox
                 {
-                    Name = $"option{i + 1}",
-                    Top = optionTop,
-                    Left = 80,
-                    Width = containerWidth - 100,
-                    PlaceholderText = $"Enter option {i + 1}..."
+                    Size = new Size(width - 120, 25),
+                    Location = new Point(90, optTop)
                 };
-                container.Controls.Add(optionTextBox);
-                optionTextBoxes.Add(optionTextBox);
 
-                optionTop += 35;
+                optionBoxes.Add(optBox);
+                container.Controls.Add(optLabel);
+                container.Controls.Add(optBox);
+
+                optTop += 30;
             }
 
-            // Correct answer dropdown
-            Label correctAnswerLabel = new Label
+            // ===== CORRECT ANSWER =====
+            Label correctLbl = new Label
             {
                 Text = "Correct Answer:",
-                Top = optionTop + 5,
-                Left = 10,
-                Width = 100
+                Location = new Point(10, optTop + 4)
             };
-            container.Controls.Add(correctAnswerLabel);
 
-            ComboBox correctAnswerCombo = new ComboBox
+            ComboBox correctAnswer = new ComboBox
             {
-                Name = "correctAnswer",
-                Top = optionTop,
-                Left = 120,
-                Width = 200,
-                DropDownStyle = ComboBoxStyle.DropDownList
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Size = new Size(220, 25),
+                Location = new Point(130, optTop)
             };
-            container.Controls.Add(correctAnswerCombo);
 
-            // Update combo box when option text changes
-            foreach (var optionBox in optionTextBoxes)
+            // Update correct answer list dynamically
+            foreach (var opt in optionBoxes)
             {
-                optionBox.TextChanged += (s, e) =>
+                opt.TextChanged += (s, e) =>
                 {
-                    correctAnswerCombo.Items.Clear();
-                    foreach (var opt in optionTextBoxes.Where(o => !string.IsNullOrWhiteSpace(o.Text)))
-                    {
-                        correctAnswerCombo.Items.Add(opt.Text);
-                    }
+                    correctAnswer.Items.Clear();
+                    foreach (var o in optionBoxes.Where(x => !string.IsNullOrWhiteSpace(x.Text)))
+                        correctAnswer.Items.Add(o.Text);
                 };
             }
 
-            // Marks
-            Label marksLabel = new Label
+            // ===== DELETE BUTTON =====
+            Button deleteBtn = new Button
             {
-                Text = "Marks:",
-                Top = optionTop + 5,
-                Left = 340,
-                Width = 50
-            };
-            container.Controls.Add(marksLabel);
-
-            TextBox marksTextBox = new TextBox
-            {
-                Name = "marks",
-                Top = optionTop,
-                Left = 390,
-                Width = 50,
-                Text = "1"
-            };
-            container.Controls.Add(marksTextBox);
-
-            // Delete button
-            Button deleteButton = new Button
-            {
-                Text = "🗑️ Delete",
-                Top = optionTop,
-                Left = containerWidth - 100,
-                Width = 80,
-                Height = 25,
+                Text = "Delete",
+                Size = new Size(80, 28),
+                Location = new Point(width - 170, optTop + 10),
                 BackColor = Color.IndianRed,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
+                ForeColor = Color.White
             };
-            deleteButton.Click += (s, e) => DeleteQuestionContainer(container);
-            container.Controls.Add(deleteButton);
 
-            // Add container to panel and list
+            deleteBtn.Click += (s, e) => DeleteQuestion(container);
+
+            // ===== ADD CONTROLS =====
+            container.Controls.Add(title);
+            container.Controls.Add(questionText);
+            container.Controls.Add(correctLbl);
+            container.Controls.Add(correctAnswer);
+            container.Controls.Add(deleteBtn);
+
             questionPanel.Controls.Add(container);
             questionContainers.Add(container);
 
-            // Reorder containers
-            ReorderContainers();
-
-            // Scroll to show new container
+            ReorderQuestions();
             questionPanel.ScrollControlIntoView(container);
         }
 
-        // ================= DELETE QUESTION CONTAINER =================
-        private void DeleteQuestionContainer(Panel container)
+        // ================= DELETE QUESTION =================
+        private void DeleteQuestion(Panel container)
         {
-            if (MessageBox.Show("Are you sure you want to delete this question?",
-                "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                // Remove from panel and list
-                questionPanel.Controls.Remove(container);
-                questionContainers.Remove(container);
+            if (MessageBox.Show("Delete this question?", "Confirm",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                return;
 
-                // Dispose resources
-                container.Dispose();
+            questionPanel.Controls.Remove(container);
+            questionContainers.Remove(container);
+            container.Dispose();
 
-                // Reorder remaining containers
-                ReorderContainers();
-            }
+            ReorderQuestions();
         }
 
-        // ================= REORDER CONTAINERS =================
-        private void ReorderContainers()
+        private void ReorderQuestions()
         {
-            int topPosition = 100; // Start below buttons
+            int top = addNewBtn.Bottom + 15;
+            int fixedWidth = questionPanel.ClientSize.Width - 40;
 
             for (int i = 0; i < questionContainers.Count; i++)
             {
-                Panel container = questionContainers[i];
-                container.Top = topPosition;
+                Panel p = questionContainers[i];
 
-                // Update question number
-                foreach (Control ctrl in container.Controls)
-                {
-                    if (ctrl is Label label && label.Text.StartsWith("Question #"))
-                    {
-                        label.Text = $"Question #{i + 1}";
-                        break;
-                    }
-                }
+                p.Location = new Point(20, top);
+                p.Width = fixedWidth;
 
-                topPosition = container.Bottom + 10;
-            }
+                var lbl = p.Controls
+                           .OfType<Label>()
+                           .First(l => l.Text.StartsWith("Question"));
 
-            // Position Add New button at the bottom
-            if (addNewBtn != null)
-            {
-                if (questionContainers.Count > 0)
-                {
-                    addNewBtn.Top = questionContainers.Last().Bottom + 20;
-                }
-                else
-                {
-                    addNewBtn.Top = 100;
-                }
-                addNewBtn.Left = (questionPanel.Width - addNewBtn.Width) / 2;
+                lbl.Text = $"Question {i + 1}";
+
+                top = p.Bottom + 15;
             }
         }
 
+
+
+
+
+        // ================= REORDER =================
+
+
+
+        //=================End QUESTION PANEL METHODS=================
         // ================= OTHER BUTTONS =================
         private void exitBtn_Click(object sender, EventArgs e)
         {
@@ -395,6 +359,11 @@ namespace LanQuizer
         {
             Schedule schedule = new Schedule();
             schedule.Show();
+        }
+
+        private void CreateQuiz_Load_1(object sender, EventArgs e)
+        {
+
         }
     }
 }
