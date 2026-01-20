@@ -697,8 +697,11 @@ namespace LanQuizer
                             examName,
                             duration.ToString(),
                             quizMark.ToString(),
-                            featuresJson, allowedQuestion,
-                            quizID
+                            featuresJson,
+                            allowedQuestion,
+                            quizID,
+                            course,      // <-- Added course argument
+                            section      // <-- Added section argument
                         );
 
                         startForm.LoadQuestionsJson(questionsJson);

@@ -257,3 +257,5 @@ GO
 
 Select * from QuizTable;
 select * from Teachers;
+select * from Students;
+select * from StudentAttempts;

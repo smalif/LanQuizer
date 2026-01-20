@@ -30,9 +30,9 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CreateQuiz));
             groupBox3 = new GroupBox();
-            questionPanel = new Panel();
             questionBtn = new Button();
             myQuizBtn = new Button();
+            questionPanel = new Panel();
             Logo = new Panel();
             backbtn = new PictureBox();
             minbtn = new Label();
@@ -44,15 +44,14 @@
             label1 = new Label();
             pictureBox1 = new PictureBox();
             questionBox = new GroupBox();
-            txtRandomCount = new TextBox();
-            chkShowResult = new CheckBox();
-            chkRanOption = new CheckBox();
-            chkRanQuestion = new CheckBox();
+            chkShowAnswers = new CheckBox();
+            chkShuffleOptions = new CheckBox();
+            chkShuffleQuestions = new CheckBox();
             pictureBox5 = new PictureBox();
             saveDraft = new Button();
             pictureBox3 = new PictureBox();
-            button1 = new Button();
-            passbox = new TextBox();
+            StartQuizBtn = new Button();
+            passwordTxt = new TextBox();
             label17 = new Label();
             pictureBox4 = new PictureBox();
             label18 = new Label();
@@ -62,11 +61,11 @@
             label22 = new Label();
             label23 = new Label();
             label24 = new Label();
-            markBox = new TextBox();
+            allowedMarksTxt = new TextBox();
             label25 = new Label();
-            durationbox = new TextBox();
+            durationTxt = new TextBox();
             label27 = new Label();
-            examNamebox = new TextBox();
+            examNameTxt = new TextBox();
             label28 = new Label();
             groupBox3.SuspendLayout();
             Logo.SuspendLayout();
@@ -88,14 +87,6 @@
             groupBox3.Size = new Size(229, 61);
             groupBox3.TabIndex = 22;
             groupBox3.TabStop = false;
-            // 
-            // questionPanel
-            // 
-            questionPanel.AutoScroll = true;
-            questionPanel.Location = new Point(12, 206);
-            questionPanel.Name = "questionPanel";
-            questionPanel.Size = new Size(1238, 567);
-            questionPanel.TabIndex = 24;
             // 
             // questionBtn
             // 
@@ -119,6 +110,14 @@
             myQuizBtn.Text = "Settings";
             myQuizBtn.UseVisualStyleBackColor = false;
             myQuizBtn.Click += myQuizBtn_Click;
+            // 
+            // questionPanel
+            // 
+            questionPanel.AutoScroll = true;
+            questionPanel.Location = new Point(806, 170);
+            questionPanel.Name = "questionPanel";
+            questionPanel.Size = new Size(1238, 567);
+            questionPanel.TabIndex = 24;
             // 
             // Logo
             // 
@@ -243,15 +242,14 @@
             // 
             // questionBox
             // 
-            questionBox.Controls.Add(txtRandomCount);
-            questionBox.Controls.Add(chkShowResult);
-            questionBox.Controls.Add(chkRanOption);
-            questionBox.Controls.Add(chkRanQuestion);
+            questionBox.Controls.Add(chkShowAnswers);
+            questionBox.Controls.Add(chkShuffleOptions);
+            questionBox.Controls.Add(chkShuffleQuestions);
             questionBox.Controls.Add(pictureBox5);
             questionBox.Controls.Add(saveDraft);
             questionBox.Controls.Add(pictureBox3);
-            questionBox.Controls.Add(button1);
-            questionBox.Controls.Add(passbox);
+            questionBox.Controls.Add(StartQuizBtn);
+            questionBox.Controls.Add(passwordTxt);
             questionBox.Controls.Add(label17);
             questionBox.Controls.Add(pictureBox4);
             questionBox.Controls.Add(label18);
@@ -261,11 +259,11 @@
             questionBox.Controls.Add(label22);
             questionBox.Controls.Add(label23);
             questionBox.Controls.Add(label24);
-            questionBox.Controls.Add(markBox);
+            questionBox.Controls.Add(allowedMarksTxt);
             questionBox.Controls.Add(label25);
-            questionBox.Controls.Add(durationbox);
+            questionBox.Controls.Add(durationTxt);
             questionBox.Controls.Add(label27);
-            questionBox.Controls.Add(examNamebox);
+            questionBox.Controls.Add(examNameTxt);
             questionBox.Controls.Add(label28);
             questionBox.Font = new Font("Segoe UI", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
             questionBox.Location = new Point(12, 216);
@@ -275,40 +273,32 @@
             questionBox.TabStop = false;
             questionBox.Text = "Question Setting";
             // 
-            // txtRandomCount
+            // chkShowAnswers
             // 
-            txtRandomCount.Location = new Point(344, 201);
-            txtRandomCount.Name = "txtRandomCount";
-            txtRandomCount.Size = new Size(125, 31);
-            txtRandomCount.TabIndex = 29;
-            txtRandomCount.Visible = false;
+            chkShowAnswers.AutoSize = true;
+            chkShowAnswers.Location = new Point(33, 313);
+            chkShowAnswers.Name = "chkShowAnswers";
+            chkShowAnswers.Size = new Size(18, 17);
+            chkShowAnswers.TabIndex = 28;
+            chkShowAnswers.UseVisualStyleBackColor = true;
             // 
-            // chkShowResult
+            // chkShuffleOptions
             // 
-            chkShowResult.AutoSize = true;
-            chkShowResult.Location = new Point(33, 313);
-            chkShowResult.Name = "chkShowResult";
-            chkShowResult.Size = new Size(18, 17);
-            chkShowResult.TabIndex = 28;
-            chkShowResult.UseVisualStyleBackColor = true;
+            chkShuffleOptions.AutoSize = true;
+            chkShuffleOptions.Location = new Point(33, 261);
+            chkShuffleOptions.Name = "chkShuffleOptions";
+            chkShuffleOptions.Size = new Size(18, 17);
+            chkShuffleOptions.TabIndex = 27;
+            chkShuffleOptions.UseVisualStyleBackColor = true;
             // 
-            // chkRanOption
+            // chkShuffleQuestions
             // 
-            chkRanOption.AutoSize = true;
-            chkRanOption.Location = new Point(33, 261);
-            chkRanOption.Name = "chkRanOption";
-            chkRanOption.Size = new Size(18, 17);
-            chkRanOption.TabIndex = 27;
-            chkRanOption.UseVisualStyleBackColor = true;
-            // 
-            // chkRanQuestion
-            // 
-            chkRanQuestion.AutoSize = true;
-            chkRanQuestion.Location = new Point(33, 207);
-            chkRanQuestion.Name = "chkRanQuestion";
-            chkRanQuestion.Size = new Size(18, 17);
-            chkRanQuestion.TabIndex = 26;
-            chkRanQuestion.UseVisualStyleBackColor = true;
+            chkShuffleQuestions.AutoSize = true;
+            chkShuffleQuestions.Location = new Point(33, 207);
+            chkShuffleQuestions.Name = "chkShuffleQuestions";
+            chkShuffleQuestions.Size = new Size(18, 17);
+            chkShuffleQuestions.TabIndex = 26;
+            chkShuffleQuestions.UseVisualStyleBackColor = true;
             // 
             // pictureBox5
             // 
@@ -319,6 +309,7 @@
             pictureBox5.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox5.TabIndex = 25;
             pictureBox5.TabStop = false;
+            pictureBox5.Click += pictureBox5_Click;
             // 
             // saveDraft
             // 
@@ -329,6 +320,7 @@
             saveDraft.TabIndex = 24;
             saveDraft.Text = "Save Draft";
             saveDraft.UseVisualStyleBackColor = true;
+            saveDraft.Click += saveDraft_Click;
             // 
             // pictureBox3
             // 
@@ -341,24 +333,24 @@
             pictureBox3.TabStop = false;
             pictureBox3.Click += pictureBox3_Click;
             // 
-            // button1
+            // StartQuizBtn
             // 
-            button1.Font = new Font("Times New Roman", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            button1.Location = new Point(430, 476);
-            button1.Name = "button1";
-            button1.Size = new Size(177, 38);
-            button1.TabIndex = 22;
-            button1.Text = "Start Quiz";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
+            StartQuizBtn.Font = new Font("Times New Roman", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            StartQuizBtn.Location = new Point(430, 476);
+            StartQuizBtn.Name = "StartQuizBtn";
+            StartQuizBtn.Size = new Size(177, 38);
+            StartQuizBtn.TabIndex = 22;
+            StartQuizBtn.Text = "Start Quiz";
+            StartQuizBtn.UseVisualStyleBackColor = true;
+            StartQuizBtn.Click += button1_Click;
             // 
-            // passbox
+            // passwordTxt
             // 
-            passbox.Location = new Point(9, 430);
-            passbox.Name = "passbox";
-            passbox.PlaceholderText = "Enter Password";
-            passbox.Size = new Size(1217, 31);
-            passbox.TabIndex = 19;
+            passwordTxt.Location = new Point(9, 430);
+            passwordTxt.Name = "passwordTxt";
+            passwordTxt.PlaceholderText = "Enter Password";
+            passwordTxt.Size = new Size(1217, 31);
+            passwordTxt.TabIndex = 19;
             // 
             // label17
             // 
@@ -453,13 +445,13 @@
             label24.TabIndex = 8;
             label24.Text = "Randomize Questions";
             // 
-            // markBox
+            // allowedMarksTxt
             // 
-            markBox.Location = new Point(641, 141);
-            markBox.Name = "markBox";
-            markBox.PlaceholderText = " e.g., 100";
-            markBox.Size = new Size(585, 31);
-            markBox.TabIndex = 7;
+            allowedMarksTxt.Location = new Point(641, 141);
+            allowedMarksTxt.Name = "allowedMarksTxt";
+            allowedMarksTxt.PlaceholderText = " e.g., 100";
+            allowedMarksTxt.Size = new Size(585, 31);
+            allowedMarksTxt.TabIndex = 7;
             // 
             // label25
             // 
@@ -471,13 +463,13 @@
             label25.TabIndex = 6;
             label25.Text = "Total Marks *";
             // 
-            // durationbox
+            // durationTxt
             // 
-            durationbox.Location = new Point(9, 141);
-            durationbox.Name = "durationbox";
-            durationbox.PlaceholderText = " e.g., 60";
-            durationbox.Size = new Size(589, 31);
-            durationbox.TabIndex = 3;
+            durationTxt.Location = new Point(9, 141);
+            durationTxt.Name = "durationTxt";
+            durationTxt.PlaceholderText = " e.g., 60";
+            durationTxt.Size = new Size(589, 31);
+            durationTxt.TabIndex = 3;
             // 
             // label27
             // 
@@ -489,13 +481,13 @@
             label27.TabIndex = 2;
             label27.Text = "Duration(Mins) *";
             // 
-            // examNamebox
+            // examNameTxt
             // 
-            examNamebox.Location = new Point(12, 67);
-            examNamebox.Name = "examNamebox";
-            examNamebox.PlaceholderText = " e.g., Midterm Exam";
-            examNamebox.Size = new Size(1214, 31);
-            examNamebox.TabIndex = 1;
+            examNameTxt.Location = new Point(12, 67);
+            examNameTxt.Name = "examNameTxt";
+            examNameTxt.PlaceholderText = " e.g., Midterm Exam";
+            examNameTxt.Size = new Size(1214, 31);
+            examNameTxt.TabIndex = 1;
             // 
             // label28
             // 
@@ -550,15 +542,14 @@
         private Label exitBtn;
         private Panel questionPanel;
         private GroupBox questionBox;
-        private TextBox txtRandomCount;
-        private CheckBox chkShowResult;
-        private CheckBox chkRanOption;
-        private CheckBox chkRanQuestion;
+        private CheckBox chkShowAnswers;
+        private CheckBox chkShuffleOptions;
+        private CheckBox chkShuffleQuestions;
         private PictureBox pictureBox5;
         private Button saveDraft;
         private PictureBox pictureBox3;
-        private Button button1;
-        private TextBox passbox;
+        private Button StartQuizBtn;
+        private TextBox passwordTxt;
         private Label label17;
         private PictureBox pictureBox4;
         private Label label18;
@@ -568,11 +559,11 @@
         private Label label22;
         private Label label23;
         private Label label24;
-        private TextBox markBox;
+        private TextBox allowedMarksTxt;
         private Label label25;
-        private TextBox durationbox;
+        private TextBox durationTxt;
         private Label label27;
-        private TextBox examNamebox;
+        private TextBox examNameTxt;
         private Label label28;
         private PictureBox backbtn;
     }

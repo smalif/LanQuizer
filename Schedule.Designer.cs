@@ -33,6 +33,12 @@
             label1 = new Label();
             label3 = new Label();
             ScheduleQuiz = new GroupBox();
+            StartNowGrp = new GroupBox();
+            StartSection = new ComboBox();
+            StartCourse = new ComboBox();
+            startNowBtn = new Button();
+            label6 = new Label();
+            label7 = new Label();
             ScheduleSec = new ComboBox();
             scheduleCourse = new ComboBox();
             scheduleTime = new DateTimePicker();
@@ -40,12 +46,6 @@
             scheduleBtn = new Button();
             label5 = new Label();
             label4 = new Label();
-            StartNowGrp = new GroupBox();
-            StartSection = new ComboBox();
-            StartCourse = new ComboBox();
-            startNowBtn = new Button();
-            label6 = new Label();
-            label7 = new Label();
             scheduleCheck = new RadioButton();
             startNowChk = new RadioButton();
             ScheduleQuiz.SuspendLayout();
@@ -61,7 +61,6 @@
             label2.Size = new Size(237, 39);
             label2.TabIndex = 6;
             label2.Text = "Save/Start";
-            label2.Click += label2_Click;
             // 
             // label1
             // 
@@ -102,6 +101,75 @@
             ScheduleQuiz.TabStop = false;
             ScheduleQuiz.Text = "Schedule Quiz";
             // 
+            // StartNowGrp
+            // 
+            StartNowGrp.Controls.Add(StartSection);
+            StartNowGrp.Controls.Add(StartCourse);
+            StartNowGrp.Controls.Add(startNowBtn);
+            StartNowGrp.Controls.Add(label6);
+            StartNowGrp.Controls.Add(label7);
+            StartNowGrp.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            StartNowGrp.Location = new Point(12, 85);
+            StartNowGrp.Name = "StartNowGrp";
+            StartNowGrp.Size = new Size(386, 127);
+            StartNowGrp.TabIndex = 17;
+            StartNowGrp.TabStop = false;
+            StartNowGrp.Text = "Start Now";
+            // 
+            // StartSection
+            // 
+            StartSection.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+            StartSection.AutoCompleteSource = AutoCompleteSource.ListItems;
+            StartSection.FormattingEnabled = true;
+            StartSection.Location = new Point(315, 39);
+            StartSection.Name = "StartSection";
+            StartSection.Size = new Size(65, 28);
+            StartSection.TabIndex = 16;
+            StartSection.SelectedIndexChanged += StartSection_SelectedIndexChanged;
+            // 
+            // StartCourse
+            // 
+            StartCourse.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+            StartCourse.AutoCompleteSource = AutoCompleteSource.ListItems;
+            StartCourse.FormattingEnabled = true;
+            StartCourse.Location = new Point(80, 39);
+            StartCourse.Name = "StartCourse";
+            StartCourse.Size = new Size(156, 28);
+            StartCourse.TabIndex = 15;
+            StartCourse.SelectedIndexChanged += StartCourse_SelectedIndexChanged;
+            // 
+            // startNowBtn
+            // 
+            startNowBtn.BackColor = Color.SeaGreen;
+            startNowBtn.ForeColor = SystemColors.Control;
+            startNowBtn.Location = new Point(143, 75);
+            startNowBtn.Name = "startNowBtn";
+            startNowBtn.Size = new Size(94, 29);
+            startNowBtn.TabIndex = 12;
+            startNowBtn.Text = "Start Now";
+            startNowBtn.UseVisualStyleBackColor = false;
+            startNowBtn.Click += startNowBtn_Click_1;
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            label6.Location = new Point(240, 42);
+            label6.Name = "label6";
+            label6.Size = new Size(76, 20);
+            label6.TabIndex = 11;
+            label6.Text = "Section :";
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            label7.Location = new Point(6, 42);
+            label7.Name = "label7";
+            label7.Size = new Size(74, 20);
+            label7.TabIndex = 10;
+            label7.Text = "Course :";
+            // 
             // ScheduleSec
             // 
             ScheduleSec.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
@@ -111,7 +179,6 @@
             ScheduleSec.Name = "ScheduleSec";
             ScheduleSec.Size = new Size(65, 28);
             ScheduleSec.TabIndex = 16;
-            ScheduleSec.SelectedIndexChanged += scheduleSec_SelectedIndexChanged;
             // 
             // scheduleCourse
             // 
@@ -172,74 +239,6 @@
             label4.Size = new Size(74, 20);
             label4.TabIndex = 10;
             label4.Text = "Course :";
-            // 
-            // StartNowGrp
-            // 
-            StartNowGrp.Controls.Add(StartSection);
-            StartNowGrp.Controls.Add(StartCourse);
-            StartNowGrp.Controls.Add(startNowBtn);
-            StartNowGrp.Controls.Add(label6);
-            StartNowGrp.Controls.Add(label7);
-            StartNowGrp.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            StartNowGrp.Location = new Point(12, 125);
-            StartNowGrp.Name = "StartNowGrp";
-            StartNowGrp.Size = new Size(386, 127);
-            StartNowGrp.TabIndex = 17;
-            StartNowGrp.TabStop = false;
-            StartNowGrp.Text = "Start Now";
-            // 
-            // StartSection
-            // 
-            StartSection.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-            StartSection.AutoCompleteSource = AutoCompleteSource.ListItems;
-            StartSection.FormattingEnabled = true;
-            StartSection.Location = new Point(315, 39);
-            StartSection.Name = "StartSection";
-            StartSection.Size = new Size(65, 28);
-            StartSection.TabIndex = 16;
-            StartSection.SelectedIndexChanged += StartSection_SelectedIndexChanged;
-            // 
-            // StartCourse
-            // 
-            StartCourse.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-            StartCourse.AutoCompleteSource = AutoCompleteSource.ListItems;
-            StartCourse.FormattingEnabled = true;
-            StartCourse.Location = new Point(80, 39);
-            StartCourse.Name = "StartCourse";
-            StartCourse.Size = new Size(156, 28);
-            StartCourse.TabIndex = 15;
-            StartCourse.SelectedIndexChanged += StartCourse_SelectedIndexChanged;
-            // 
-            // startNowBtn
-            // 
-            startNowBtn.BackColor = Color.SeaGreen;
-            startNowBtn.ForeColor = SystemColors.Control;
-            startNowBtn.Location = new Point(143, 75);
-            startNowBtn.Name = "startNowBtn";
-            startNowBtn.Size = new Size(94, 29);
-            startNowBtn.TabIndex = 12;
-            startNowBtn.Text = "Start Now";
-            startNowBtn.UseVisualStyleBackColor = false;
-            // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label6.Location = new Point(240, 42);
-            label6.Name = "label6";
-            label6.Size = new Size(76, 20);
-            label6.TabIndex = 11;
-            label6.Text = "Section :";
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Font = new Font("Times New Roman", 10.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label7.Location = new Point(6, 42);
-            label7.Name = "label7";
-            label7.Size = new Size(74, 20);
-            label7.TabIndex = 10;
-            label7.Text = "Course :";
             // 
             // scheduleCheck
             // 
