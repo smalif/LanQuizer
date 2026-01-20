@@ -179,6 +179,7 @@
             ScheduleSec.Name = "ScheduleSec";
             ScheduleSec.Size = new Size(65, 28);
             ScheduleSec.TabIndex = 16;
+            ScheduleSec.SelectedIndexChanged += ScheduleSec_SelectedIndexChanged;
             // 
             // scheduleCourse
             // 

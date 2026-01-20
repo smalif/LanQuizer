@@ -482,29 +482,34 @@ namespace LanQuizer
                     // ---------- INSERT / UPDATE ----------
                     if (existingQuizId == 0)
                     {
-                        string insertQuery = @"
+                        // use SCOPE_IDENTITY() and cast to int
+string insertQuery = @"
 INSERT INTO QuizTable
 (TeacherID, TeacherEmail, ExamName, DurationMinutes, AllowedQuestion,
  Features, QuizPassword, Questions, Status, CreatedAt)
 VALUES
 (@teacherId, @email, @examName, @duration, @allowedMarks,
- @features, @password, @questions, @status, @createdAt)";
+ @features, @password, @questions, @status, @createdAt);
+SELECT CAST(SCOPE_IDENTITY() AS int);";
 
-                        using (SqlCommand cmd = new SqlCommand(insertQuery, con))
-                        {
-                            cmd.Parameters.AddWithValue("@teacherId", teacherId);
-                            cmd.Parameters.AddWithValue("@email", loggedInTeacherEmail);
-                            cmd.Parameters.AddWithValue("@examName", examName);
-                            cmd.Parameters.AddWithValue("@duration", duration);
-                            cmd.Parameters.AddWithValue("@allowedMarks", allowedMarks);
-                            cmd.Parameters.AddWithValue("@features", featuresJson);
-                            cmd.Parameters.AddWithValue("@password", password);
-                            cmd.Parameters.AddWithValue("@questions", questionsJson);
-                            cmd.Parameters.AddWithValue("@status", status);
-                            cmd.Parameters.AddWithValue("@createdAt", DateTime.Now);
-                            quizId = (int)cmd.ExecuteScalar();
-                            cmd.ExecuteNonQuery();
-                        }
+using (SqlCommand cmd = new SqlCommand(insertQuery, con))
+{
+    cmd.Parameters.AddWithValue("@teacherId", teacherId);
+    cmd.Parameters.AddWithValue("@email", loggedInTeacherEmail);
+    cmd.Parameters.AddWithValue("@examName", examName);
+    cmd.Parameters.AddWithValue("@duration", duration);
+    cmd.Parameters.AddWithValue("@allowedMarks", allowedMarks);
+    cmd.Parameters.AddWithValue("@features", featuresJson);
+    cmd.Parameters.AddWithValue("@password", password);
+    cmd.Parameters.AddWithValue("@questions", questionsJson);
+    cmd.Parameters.AddWithValue("@status", status);
+    cmd.Parameters.AddWithValue("@createdAt", DateTime.Now);
+
+    object idObj = cmd.ExecuteScalar(); // now returns the identity
+    if (idObj != null && idObj != DBNull.Value)
+        quizId = Convert.ToInt32(idObj);
+    // no ExecuteNonQuery() here
+}
                     }
                     else
                     {

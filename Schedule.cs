@@ -30,6 +30,12 @@ namespace LanQuizer
 
             connStr = ConfigurationManager.ConnectionStrings["LanQuizerDB"]?.ConnectionString ?? string.Empty;
             connect = new SqlConnection(connStr);
+
+            if (!string.IsNullOrEmpty(this.quizId))
+            {
+                // Load quiz details into this form so scheduling / start actions work
+                LoadQuizDetails(this.quizId);
+            }
         }
 
         public Schedule(string examName, int duration, int allowedMarks, string password,
@@ -52,6 +58,59 @@ namespace LanQuizer
             LoggedInTeacherEmail = LoggedInUser.Email ?? string.Empty;
 
             LoadCourses();
+        }
+
+        private void LoadQuizDetails(string quizID)
+        {
+            try
+            {
+                using (SqlConnection con = new SqlConnection(connStr))
+                {
+                    con.Open();
+                    string q = "SELECT * FROM QuizTable WHERE QuizID=@quizId";
+                    using (SqlCommand cmd = new SqlCommand(q, con))
+                    {
+                        cmd.Parameters.AddWithValue("@quizId", quizID);
+                        using (SqlDataReader dr = cmd.ExecuteReader())
+                        {
+                            if (dr.Read())
+                            {
+                                // populate fields so schedule/save/start operations have data
+                                this.quizId = dr["QuizID"]?.ToString() ?? string.Empty;
+                                this.examName = dr["ExamName"]?.ToString() ?? string.Empty;
+                                this.duration = dr["DurationMinutes"] == DBNull.Value ? 0 : Convert.ToInt32(dr["DurationMinutes"]);
+                                this.allowedMarks = dr["AllowedQuestion"] == DBNull.Value ? 0 : Convert.ToInt32(dr["AllowedQuestion"]);
+                                this.questionsJson = dr["Questions"]?.ToString() ?? string.Empty;
+                                this.featuresJson = dr["Features"]?.ToString() ?? string.Empty;
+                                this.password = dr["QuizPassword"]?.ToString() ?? string.Empty;
+                                this.teacherEmail = dr["TeacherEmail"]?.ToString() ?? string.Empty;
+
+                                // Preselect course/section in UI if available (controls exist after InitializeComponent)
+                                string course = dr["Course"]?.ToString() ?? string.Empty;
+                                string section = dr["Section"]?.ToString() ?? string.Empty;
+
+                                // Load lists and select items if present
+                                LoadCourses();
+                                if (!string.IsNullOrEmpty(course))
+                                {
+                                    int idx = scheduleCourse.Items.IndexOf(course);
+                                    if (idx != -1) scheduleCourse.SelectedIndex = idx;
+                                    else scheduleCourse.Text = course;
+
+                                    LoadSections(course, ScheduleSec);
+                                    int sidx = ScheduleSec.Items.IndexOf(section);
+                                    if (sidx != -1) ScheduleSec.SelectedIndex = sidx;
+                                    else ScheduleSec.Text = section;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Non-fatal for UI; caller can still schedule/insert
+            }
         }
 
         private void Schedule_Load(object sender, EventArgs e)
@@ -126,6 +185,11 @@ namespace LanQuizer
                         {
                             MessageBox.Show("No courses found. Please add student data first.", "No Data", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             scheduleBtn.Enabled = false;
+                        }
+                        else
+                        {
+                            // Leave enabling to ValidateScheduleInputs; ensure it's evaluated
+                            ValidateScheduleInputs();
                         }
                     }
                 }
@@ -215,52 +279,10 @@ namespace LanQuizer
                 {
                     con.Open();
 
-                    // Check if quiz already exists
-                    string checkQuery = @"SELECT QuizID FROM QuizTable WHERE TeacherEmail=@teacherEmail AND ExamName=@examName";
-                    using (SqlCommand cmd = new SqlCommand(checkQuery, con))
+                    // Check if quiz already exists (prefer using QuizID if available)
+                    if (!string.IsNullOrEmpty(this.quizId))
                     {
-                        cmd.Parameters.AddWithValue("@teacherEmail", teacherEmail ?? string.Empty);
-                        cmd.Parameters.AddWithValue("@examName", examName ?? string.Empty);
-
-                        object result = cmd.ExecuteScalar();
-                        if (result != null) quizId = result.ToString() ?? string.Empty;
-                    }
-
-                    if (string.IsNullOrEmpty(quizId))
-                    {
-                        // Insert new
-                        string insertQuery = @"
-INSERT INTO QuizTable
-(TeacherID, TeacherEmail, ExamName, DurationMinutes, AllowedQuestion,
- Features, QuizPassword, Questions, Status, CreatedAt,
- Course, Section, StartTime)
-VALUES
-((SELECT TeacherID FROM Teachers WHERE TeacherEmail=@teacherEmail),
- @teacherEmail, @examName, @duration, @allowedMarks,
- @features, @password, @questions, @status, @createdAt,
- @course, @section, @scheduledDateTime)";
-
-                        using (SqlCommand cmd = new SqlCommand(insertQuery, con))
-                        {
-                            cmd.Parameters.AddWithValue("@teacherEmail", teacherEmail ?? string.Empty);
-                            cmd.Parameters.AddWithValue("@examName", examName ?? string.Empty);
-                            cmd.Parameters.AddWithValue("@duration", duration);
-                            cmd.Parameters.AddWithValue("@allowedMarks", allowedMarks);
-                            cmd.Parameters.AddWithValue("@features", featuresJson ?? string.Empty);
-                            cmd.Parameters.AddWithValue("@password", password ?? string.Empty);
-                            cmd.Parameters.AddWithValue("@questions", questionsJson ?? string.Empty);
-                            cmd.Parameters.AddWithValue("@status", "Scheduled");
-                            cmd.Parameters.AddWithValue("@createdAt", DateTime.Now);
-                            cmd.Parameters.AddWithValue("@course", scheduleCourse.SelectedItem?.ToString() ?? string.Empty);
-                            cmd.Parameters.AddWithValue("@section", ScheduleSec.SelectedItem?.ToString() ?? string.Empty);
-                            cmd.Parameters.AddWithValue("@scheduledDateTime", scheduledDateTime);
-
-                            cmd.ExecuteNonQuery();
-                        }
-                    }
-                    else
-                    {
-                        // Update existing
+                        // update existing quiz if QuizID present
                         string updateQuery = @"
 UPDATE QuizTable SET
 DurationMinutes=@duration,
@@ -276,7 +298,7 @@ WHERE QuizID=@quizId";
 
                         using (SqlCommand cmd = new SqlCommand(updateQuery, con))
                         {
-                            cmd.Parameters.AddWithValue("@quizId", quizId);
+                            cmd.Parameters.AddWithValue("@quizId", this.quizId);
                             cmd.Parameters.AddWithValue("@duration", duration);
                             cmd.Parameters.AddWithValue("@allowedMarks", allowedMarks);
                             cmd.Parameters.AddWithValue("@features", featuresJson ?? string.Empty);
@@ -288,6 +310,88 @@ WHERE QuizID=@quizId";
                             cmd.Parameters.AddWithValue("@scheduledDateTime", scheduledDateTime);
 
                             cmd.ExecuteNonQuery();
+                        }
+                    }
+                    else
+                    {
+                        // Try find by teacher/email/examName first
+                        string checkQuery = @"SELECT QuizID FROM QuizTable WHERE TeacherEmail=@teacherEmail AND ExamName=@examName";
+                        using (SqlCommand cmd = new SqlCommand(checkQuery, con))
+                        {
+                            cmd.Parameters.AddWithValue("@teacherEmail", teacherEmail ?? LoggedInTeacherEmail ?? string.Empty);
+                            cmd.Parameters.AddWithValue("@examName", examName ?? string.Empty);
+
+                            object result = cmd.ExecuteScalar();
+                            if (result != null) this.quizId = result.ToString() ?? string.Empty;
+                        }
+
+                        if (string.IsNullOrEmpty(this.quizId))
+                        {
+                            // Insert new and return new id
+                            string insertQuery = @"
+INSERT INTO QuizTable
+(TeacherID, TeacherEmail, ExamName, DurationMinutes, AllowedQuestion,
+ Features, QuizPassword, Questions, Status, CreatedAt,
+ Course, Section, StartTime)
+VALUES
+((SELECT TeacherID FROM Teachers WHERE TeacherEmail=@teacherEmail),
+ @teacherEmail, @examName, @duration, @allowedMarks,
+ @features, @password, @questions, @status, @createdAt,
+ @course, @section, @scheduledDateTime);
+SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                            using (SqlCommand cmd = new SqlCommand(insertQuery, con))
+                            {
+                                cmd.Parameters.AddWithValue("@teacherEmail", teacherEmail ?? LoggedInTeacherEmail ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@examName", examName ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@duration", duration);
+                                cmd.Parameters.AddWithValue("@allowedMarks", allowedMarks);
+                                cmd.Parameters.AddWithValue("@features", featuresJson ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@password", password ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@questions", questionsJson ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@status", "Scheduled");
+                                cmd.Parameters.AddWithValue("@createdAt", DateTime.Now);
+                                cmd.Parameters.AddWithValue("@course", scheduleCourse.SelectedItem?.ToString() ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@section", ScheduleSec.SelectedItem?.ToString() ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@scheduledDateTime", scheduledDateTime);
+
+                                // execute and capture new id
+                                object newId = cmd.ExecuteScalar();
+                                if (newId != null)
+                                    this.quizId = newId.ToString() ?? string.Empty;
+                            }
+                        }
+                        else
+                        {
+                            // If found by name, update it as well
+                            string updateQuery = @"
+UPDATE QuizTable SET
+DurationMinutes=@duration,
+AllowedQuestion=@allowedMarks,
+Features=@features,
+QuizPassword=@password,
+Questions=@questions,
+Status=@status,
+Course=@course,
+Section=@section,
+StartTime=@scheduledDateTime
+WHERE QuizID=@quizId";
+
+                            using (SqlCommand cmd = new SqlCommand(updateQuery, con))
+                            {
+                                cmd.Parameters.AddWithValue("@quizId", this.quizId);
+                                cmd.Parameters.AddWithValue("@duration", duration);
+                                cmd.Parameters.AddWithValue("@allowedMarks", allowedMarks);
+                                cmd.Parameters.AddWithValue("@features", featuresJson ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@password", password ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@questions", questionsJson ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@status", "Scheduled");
+                                cmd.Parameters.AddWithValue("@course", scheduleCourse.SelectedItem?.ToString() ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@section", ScheduleSec.SelectedItem?.ToString() ?? string.Empty);
+                                cmd.Parameters.AddWithValue("@scheduledDateTime", scheduledDateTime);
+
+                                cmd.ExecuteNonQuery();
+                            }
                         }
                     }
                 }
@@ -418,16 +522,22 @@ WHERE QuizID=@quizId";
                 return;
             }
 
+            // create StartQuiz with correct parameter ordering expected by StartQuiz constructor
+            int qid = 0;
+            if (!int.TryParse(quiz.QuizID ?? string.Empty, out qid)) qid = 0;
+
             StartQuiz startForm = new StartQuiz(
-                quiz.QuizID ?? string.Empty,
-                quiz.ExamName ?? string.Empty,
-                quiz.QuestionsJson ?? string.Empty,
-                quiz.Password ?? string.Empty,
-                quiz.FeaturesJson ?? string.Empty,
-                quiz.DurationMinutes,
-                courseName,
-                sectionName
+                quiz.ExamName ?? string.Empty,               // examName
+                quiz.DurationMinutes.ToString(),             // duration (string)
+                quiz.AllowedMarks.ToString(),                // marks/total (string)
+                quiz.FeaturesJson ?? string.Empty,           // features (json)
+                quiz.AllowedMarks.ToString(),                // allowedMark (string)
+                qid,                                         // quizId (int)
+                sectionName,                                 // section
+                quiz.Password ?? string.Empty                // password
             );
+            startForm.LoadQuestionsJson(quiz.QuestionsJson ?? "[]");
+            startForm.SetMeta(courseName, sectionName);
             startForm.Show();
             this.Close();
         }
@@ -487,18 +597,86 @@ WHERE QuizID=@quizId";
                 string selectedCourse = StartCourse.SelectedItem?.ToString() ?? string.Empty;
                 string selectedSection = StartSection.SelectedItem?.ToString() ?? string.Empty;
 
-                // Retrieve quiz info from database using quizId
+                // Ensure we have connection string
                 string localConnStr = ConfigurationManager.ConnectionStrings["LanQuizerDB"]?.ConnectionString ?? string.Empty;
+
+                // Ensure quiz exists in DB; if not, insert it and get new id
                 using (SqlConnection con = new SqlConnection(localConnStr))
                 {
                     con.Open();
-                    string query = @"SELECT ExamName, DurationMinutes, AllowedQuestion, Features, QuizPassword
+
+                    // If quizId empty try to find by teacher email + exam name
+                    if (string.IsNullOrEmpty(this.quizId))
+                    {
+                        if (string.IsNullOrWhiteSpace(this.examName))
+                        {
+                            MessageBox.Show("Quiz details are missing. Cannot save or start quiz.", "Missing Data", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            return;
+                        }
+
+                        string checkQuery = "SELECT QuizID FROM QuizTable WHERE TeacherEmail=@teacherEmail AND ExamName=@examName";
+                        using (SqlCommand chk = new SqlCommand(checkQuery, con))
+                        {
+                            chk.Parameters.AddWithValue("@teacherEmail", (this.teacherEmail ?? LoggedInTeacherEmail ?? string.Empty));
+                            chk.Parameters.AddWithValue("@examName", this.examName ?? string.Empty);
+
+                            object found = chk.ExecuteScalar();
+                            if (found != null && found != DBNull.Value)
+                                this.quizId = found.ToString() ?? string.Empty;
+                        }
+
+                        // If still empty, insert a new quiz record
+                        if (string.IsNullOrEmpty(this.quizId))
+                        {
+                            string insertQuery = @"
+INSERT INTO QuizTable
+(TeacherID, TeacherEmail, ExamName, DurationMinutes, AllowedQuestion,
+ Features, QuizPassword, Questions, Status, CreatedAt,
+ Course, Section, StartTime)
+VALUES
+((SELECT TeacherID FROM Teachers WHERE TeacherEmail=@teacherEmail),
+ @teacherEmail, @examName, @duration, @allowedMarks,
+ @features, @password, @questions, @status, @createdAt,
+ @course, @section, @startTime);
+SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                            using (SqlCommand ins = new SqlCommand(insertQuery, con))
+                            {
+                                ins.Parameters.AddWithValue("@teacherEmail", (this.teacherEmail ?? LoggedInTeacherEmail ?? string.Empty));
+                                ins.Parameters.AddWithValue("@examName", this.examName ?? string.Empty);
+                                ins.Parameters.AddWithValue("@duration", this.duration);
+                                ins.Parameters.AddWithValue("@allowedMarks", this.allowedMarks);
+                                ins.Parameters.AddWithValue("@features", this.featuresJson ?? string.Empty);
+                                ins.Parameters.AddWithValue("@password", this.password ?? string.Empty);
+                                ins.Parameters.AddWithValue("@questions", this.questionsJson ?? string.Empty);
+                                ins.Parameters.AddWithValue("@status", "Active");
+                                ins.Parameters.AddWithValue("@createdAt", DateTime.Now);
+                                ins.Parameters.AddWithValue("@course", selectedCourse);
+                                ins.Parameters.AddWithValue("@section", selectedSection);
+                                ins.Parameters.AddWithValue("@startTime", DateTime.Now);
+
+                                object newId = ins.ExecuteScalar();
+                                if (newId != null && newId != DBNull.Value)
+                                {
+                                    this.quizId = newId.ToString() ?? string.Empty;
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Failed to save quiz to database.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    // At this point we should have a quizId; load quiz details and open StartQuiz
+                    string query = @"SELECT ExamName, DurationMinutes, AllowedQuestion, Features, QuizPassword, Questions, QuizID
                              FROM QuizTable
                              WHERE QuizID=@quizId";
 
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
-                        cmd.Parameters.AddWithValue("@quizId", this.quizId); // quizId stored when Schedule was opened
+                        cmd.Parameters.AddWithValue("@quizId", this.quizId);
 
                         using (SqlDataReader dr = cmd.ExecuteReader())
                         {
@@ -509,21 +687,24 @@ WHERE QuizID=@quizId";
                                 string allowedMarks = dr["AllowedQuestion"]?.ToString() ?? "0";
                                 string features = dr["Features"]?.ToString() ?? string.Empty;
                                 string password = dr["QuizPassword"]?.ToString() ?? string.Empty;
+                                string questions = dr["Questions"]?.ToString() ?? string.Empty;
+                                int parsedId = dr["QuizID"] != DBNull.Value ? Convert.ToInt32(dr["QuizID"]) : 0;
 
                                 // Open StartQuiz passing section & password
                                 StartQuiz startQuizForm = new StartQuiz(
                                     examName,
                                     duration,
-                                    allowedMarks,   // marks (optional, can be calculated if needed)
+                                    allowedMarks,   // marks (string)
                                     features,
                                     allowedMarks,
-                                    int.Parse(this.quizId),
+                                    parsedId,
                                     selectedSection,
                                     password
                                 );
+                                startQuizForm.LoadQuestionsJson(questions);
+                                startQuizForm.SetMeta(selectedCourse, selectedSection);
                                 startQuizForm.Show();
-                                // Optionally hide Schedule form
-                                // this.Hide();
+                                this.Close();
                             }
                             else
                             {
@@ -546,7 +727,7 @@ WHERE QuizID=@quizId";
     public class QuizInfo
     {
         public string? QuizID { get; set; }
-        public string? ExamName { get; set; }
+        public string? ExamName { get; set; }       
         public int DurationMinutes { get; set; }
         public int AllowedMarks { get; set; }
         public string? QuestionsJson { get; set; }
