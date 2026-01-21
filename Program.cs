@@ -11,7 +11,8 @@ namespace LanQuizer
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new Student());
+            // Start the application at the teacher registration / login form
+            Application.Run(new Teacher_Reg_Form());
         }
     }
 }

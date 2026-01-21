@@ -40,6 +40,8 @@ namespace LanQuizer
         {
             InitializeComponent();
             ApplyHandCursor(this);
+            // Hide the teacher button on startup; keep it in the designer for future reuse
+            try { teacherBtn.Visible = false; } catch { }
             connStr = ConfigurationManager
                       .ConnectionStrings["LanQuizerDB"]
                       .ConnectionString;

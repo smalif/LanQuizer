@@ -9,6 +9,8 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text.Json.Serialization;
+using System.IO;
+using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -563,15 +565,49 @@ namespace LanQuizer
 
                             Button startBtn = new Button { Text = "Start Quiz", Width = 90, Height = 35, Top = gbHeight - 55, Left = 10, BackColor = Color.Green, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
                             startBtn.FlatAppearance.BorderSize = 0;
-                            // For completed quizzes we will change the label and behavior below
-                            startBtn.Click += (s, e) => StartQuiz_Click(quizID);
+                            // single handler that branches based on button text
+                            startBtn.Click += (s, e) =>
+                            {
+                                Button b = s as Button;
+                                if (b != null && b.Text == "Start Quiz")
+                                {
+                                    StartQuiz_Click(quizID);
+                                }
+                                else if (b != null && b.Text == "Start Again")
+                                {
+                                    // Completed quiz: confirm before opening editor
+                                    var dr = MessageBox.Show(
+                                        "This quiz has already been completed. Do you want to start it again (open editor)?",
+                                        "Start Again",
+                                        MessageBoxButtons.YesNo,
+                                        MessageBoxIcon.Question);
+
+                                    if (dr == DialogResult.Yes)
+                                    {
+                                        OpenEditorForQuiz(quizID, connStr);
+                                    }
+                                }
+                                else
+                                {
+                                    // Acts like edit when labeled differently
+                                    OpenEditorForQuiz(quizID, connStr);
+                                }
+                            };
 
                             Button editBtn = new Button { Text = "Edit", Width = 90, Height = 35, Top = gbHeight - 55, Left = 115, BackColor = Color.Orange, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
                             editBtn.FlatAppearance.BorderSize = 0;
-                            // default behavior (will be overridden for completed state below)
+                            // single handler that branches based on button text
                             editBtn.Click += (s, e) =>
                             {
-                                OpenEditorForQuiz(quizID, connStr);
+                                Button b = s as Button;
+                                if (b != null && b.Text == "View Result")
+                                {
+                                    ShowResultsPanel(quizID, examName, courseName, sectionName);
+                                }
+                                else
+                                {
+                                    OpenEditorForQuiz(quizID, connStr);
+                                }
                             };
 
                             Button deleteBtn = new Button { Text = "Delete", Width = 90, Height = 35, Top = gbHeight - 55, Left = 220, BackColor = Color.Red, ForeColor = Color.White, Cursor = Cursors.Hand, FlatStyle = FlatStyle.Flat };
@@ -583,13 +619,9 @@ namespace LanQuizer
                             {
                                 startBtn.Text = "Start Again";
                                 startBtn.BackColor = Color.DarkBlue;
-                                startBtn.Click -= (s, e) => StartQuiz_Click(quizID); // remove previous handler
-                                startBtn.Click += (s, e) => OpenEditorForQuiz(quizID, connStr);
 
                                 editBtn.Text = "View Result";
                                 editBtn.BackColor = Color.Teal;
-                                editBtn.Click -= null; // ensure no duplicate handlers
-                                editBtn.Click += (s, e) => ShowResultsPanel(quizID, examName, courseName, sectionName);
                             }
 
                             gb.Controls.Add(startBtn);
@@ -726,6 +758,13 @@ namespace LanQuizer
 
                         startForm.LoadQuestionsJson(questionsJson);
                         startForm.SetMeta(course, section);
+                        // hide teacher home while StartQuiz is open and restore after it closes
+                        startForm.FormClosed += (s, e) =>
+                        {
+                            try { this.Show(); } catch { }
+                            try { LoadQuizzes(); } catch { }
+                        };
+                        try { this.Hide(); } catch { }
                         startForm.Show();
                     }
                 }
@@ -783,6 +822,16 @@ namespace LanQuizer
         {
             // open CreateQuiz and load data for editing
             CreateQuiz editor = new CreateQuiz();
+
+            // When editor closes, show this form again and refresh quizzes
+            editor.FormClosed += (s, e) =>
+            {
+                try { this.Show(); } catch { }
+                try { LoadQuizzes(); } catch { }
+            };
+
+            // hide the teacher home while editing
+            try { this.Hide(); } catch { }
             editor.Show();
 
             // load details into editor
@@ -816,10 +865,185 @@ namespace LanQuizer
 
         private void ShowResultsPanel(int quizID, string examName, string courseName, string sectionName)
         {
-            // Load and show results in a DataGridView or any other control
-            // This is just a placeholder implementation
-            MessageBox.Show($"Show results for QuizID: {quizID}", "Results",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            // Check database for attempts for this quiz
+            string connStr = ConfigurationManager.ConnectionStrings["LanQuizerDB"].ConnectionString;
+            DataTable attempts = new DataTable();
+            try
+            {
+                using (SqlConnection con = new SqlConnection(connStr))
+                {
+                    con.Open();
+                    using (SqlCommand cmd = new SqlCommand("SELECT AttemptID, StudentID, Section, Course, Score, LoginTime, SubmitTime FROM StudentAttempts WHERE QuizID=@quizId", con))
+                    {
+                        cmd.Parameters.AddWithValue("@quizId", quizID);
+                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        {
+                            da.Fill(attempts);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to load attempts: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (attempts.Rows.Count == 0)
+            {
+                MessageBox.Show("No attempts found for this quiz.", "Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // Ensure metadata columns are present and populated so they appear in the grid and saved file
+            if (!attempts.Columns.Contains("ExamName"))
+                attempts.Columns.Add("ExamName", typeof(string));
+            if (!attempts.Columns.Contains("Course") && !attempts.Columns.Contains("course"))
+            {
+                // if original column missing, add with capitalized name
+                attempts.Columns.Add("Course", typeof(string));
+            }
+            if (!attempts.Columns.Contains("Section") && !attempts.Columns.Contains("section"))
+            {
+                attempts.Columns.Add("Section", typeof(string));
+            }
+
+            foreach (DataRow r in attempts.Rows)
+            {
+                try { r["ExamName"] = examName ?? string.Empty; } catch { }
+                try { if (string.IsNullOrWhiteSpace(r["Course"]?.ToString())) r["Course"] = courseName ?? string.Empty; } catch { }
+                try { if (string.IsNullOrWhiteSpace(r["Section"]?.ToString())) r["Section"] = sectionName ?? string.Empty; } catch { }
+            }
+
+            // Show results in a modal form with DataGridView and Save button
+            Form resultsForm = new Form();
+            resultsForm.Text = $"Results - {examName}";
+            resultsForm.StartPosition = FormStartPosition.CenterParent;
+            resultsForm.Size = new Size(900, 600);
+
+            // Save button
+            Button saveBtn = new Button();
+            saveBtn.Text = "Save Excel";
+            saveBtn.Width = 110;
+            saveBtn.Height = 32;
+            saveBtn.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            saveBtn.Cursor = Cursors.Hand;
+
+            // Info label
+            Label infoLbl = new Label();
+            infoLbl.AutoSize = false;
+            infoLbl.TextAlign = ContentAlignment.MiddleLeft;
+            infoLbl.Dock = DockStyle.Left;
+            infoLbl.Width = 600;
+            infoLbl.Text = $"Exam: {examName}    Course: {courseName}    Section: {sectionName}";
+            infoLbl.Font = new Font(infoLbl.Font.FontFamily, 10, FontStyle.Bold);
+
+            saveBtn.Click += (s, e) =>
+            {
+                using (SaveFileDialog sfd = new SaveFileDialog())
+                {
+                    sfd.Filter = "CSV files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx|All files (*.*)|*.*";
+                    sfd.FileName = $"{SanitizeFileName(examName)}_{SanitizeFileName(courseName)}_{SanitizeFileName(sectionName)}_results.csv";
+                    if (sfd.ShowDialog(resultsForm) == DialogResult.OK)
+                    {
+                        try
+                        {
+                            // Save as CSV (Excel can open CSV). If user selects .xlsx we still write CSV content.
+                            SaveDataTableAsCsv(attempts, sfd.FileName);
+                            MessageBox.Show("Results saved successfully.", "Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Failed to save file: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+            };
+
+            // Layout: use TableLayoutPanel so top info panel sizes dynamically and grid fills remaining space
+            TableLayoutPanel layout = new TableLayoutPanel();
+            layout.Dock = DockStyle.Fill;
+            layout.ColumnCount = 1;
+            layout.RowCount = 2;
+            layout.RowStyles.Clear();
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // top panel auto-sized
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // grid takes remaining
+
+            // Top panel: contains info label and save button
+            Panel topPanel = new Panel();
+            topPanel.Height = 56;
+            topPanel.Dock = DockStyle.Fill;
+            topPanel.Padding = new Padding(8);
+
+            // place controls using docking inside the panel
+            infoLbl.Dock = DockStyle.Fill;
+            saveBtn.Dock = DockStyle.Right;
+            saveBtn.Margin = new Padding(8, 8, 8, 8);
+
+            topPanel.Controls.Add(infoLbl);
+            topPanel.Controls.Add(saveBtn);
+
+            DataGridView dgv = new DataGridView();
+            dgv.Dock = DockStyle.Fill;
+            dgv.ReadOnly = true;
+            dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgv.DataSource = attempts;
+            dgv.AllowUserToAddRows = false;
+            dgv.AllowUserToDeleteRows = false;
+            dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgv.MultiSelect = false;
+            dgv.AutoGenerateColumns = true;
+
+            // add controls to layout
+            layout.Controls.Add(topPanel, 0, 0);
+            layout.Controls.Add(dgv, 0, 1);
+
+            resultsForm.Controls.Add(layout);
+
+            // make sure form doesn't hide rows and allows resizing
+            resultsForm.AutoScroll = false;
+            resultsForm.MinimumSize = new Size(600, 400);
+
+            resultsForm.ShowDialog(this);
+        }
+
+        private static string SanitizeFileName(string name)
+        {
+            foreach (var c in Path.GetInvalidFileNameChars())
+                name = name.Replace(c, '_');
+            return string.IsNullOrWhiteSpace(name) ? "results" : name;
+        }
+
+        private void SaveDataTableAsCsv(DataTable table, string path)
+        {
+            using (var sw = new StreamWriter(path, false, Encoding.UTF8))
+            {
+                // header
+                for (int i = 0; i < table.Columns.Count; i++)
+                {
+                    if (i > 0) sw.Write(',');
+                    sw.Write('"');
+                    sw.Write(table.Columns[i].ColumnName.Replace("\"", "\"\""));
+                    sw.Write('"');
+                }
+                sw.WriteLine();
+
+                // rows
+                foreach (DataRow row in table.Rows)
+                {
+                    for (int i = 0; i < table.Columns.Count; i++)
+                    {
+                        if (i > 0) sw.Write(',');
+                        var val = row[i]?.ToString() ?? string.Empty;
+                        // escape quotes
+                        val = val.Replace("\"", "\"\"");
+                        sw.Write('"');
+                        sw.Write(val);
+                        sw.Write('"');
+                    }
+                    sw.WriteLine();
+                }
+            }
         }
     }
 }
